@@ -9,6 +9,7 @@ A pure front-end, single-file country / region information lookup tool. Just dou
 - 🌐 **Multi-language UI**: Switch among 7 languages — Simplified Chinese, Traditional Chinese, English, Japanese, Korean, Thai, and Malay. Your language choice is saved automatically. Country names come from the official Unicode CLDR localized annotations.
 - 🔍 **Multi-dimensional search**: Match by name (including aliases), English name, 2/3-letter country codes (CN / CHN), ISO numeric code (156), currency code (USD), currency name, dial code (+86 / 86), or top-level domain (.cn). Search adapts to the active language.
 - 🗂️ **Continent grouping**: Browse by seven groups — Asia, Europe, North America, South America, Africa, Oceania, Antarctica.
+- 🗺️ **World map view**: Switch between the country list and an interactive world map. Country areas are linked to built-in data: hover for a name, click to open details, use the controls to zoom, drag with two fingers to pan, or pinch to zoom.
 - 📋 **Per-item copy**: The detail panel shows CCA2 / CCA3 / numeric code / top-level domain / dial code / official name / capital / language — each copyable with one click.
 - 💱 **Currency info**: Currency code, symbol, and name, with a localized `Intl.NumberFormat` format example (e.g. ¥1,234.56).
 - 🕐 **Time-zone current time**: Shows each country's IANA time zones with the current time and UTC offset, auto-refreshing every 30 seconds.
