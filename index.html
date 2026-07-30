@@ -21,6 +21,13 @@
     --danger-soft: #fef2f2;
     --success: #16a34a;
     --star: #f59e0b;
+    --map-asia: #bfdbfe;
+    --map-europe: #c4b5fd;
+    --map-north-america: #a7f3d0;
+    --map-south-america: #fbcfe8;
+    --map-africa: #fde68a;
+    --map-oceania: #bae6fd;
+    --map-antarctica: #e5e7eb;
     --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
     --radius: 10px;
   }
@@ -39,6 +46,13 @@
     --danger-soft: #2a1a1c;
     --success: #3fb950;
     --star: #fbbf24;
+    --map-asia: #1e3a5f;
+    --map-europe: #35255f;
+    --map-north-america: #164e43;
+    --map-south-america: #5b2146;
+    --map-africa: #5f4516;
+    --map-oceania: #164e63;
+    --map-antarctica: #30363d;
     --shadow: 0 1px 3px rgba(0,0,0,.4);
   }
 
@@ -143,6 +157,13 @@
 
   .stat { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
   .stat b { color: var(--text); font-weight: 600; }
+  .view-toggle {
+    height: 38px; padding: 0 11px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); color: var(--text-muted); font-size: 13px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: all .15s;
+  }
+  .view-toggle:hover, .view-toggle.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .view-toggle svg { width: 15px; height: 15px; }
 
   /* ---------- Region tabs ---------- */
   .tabs {
@@ -206,6 +227,7 @@
   }
   .country-card:hover {
     transform: translateY(-2px);
+    z-index: 6;
     border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(37,99,235,.15);
   }
@@ -313,6 +335,95 @@
   .detail-fav.on { color: var(--star); }
   .detail-fav.on svg { fill: currentColor; }
 
+  /* ---------- 地图按钮 & 模态框 ---------- */
+  .map-open {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 12px; font-size: 13px; cursor: pointer;
+    color: var(--accent); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; transition: all .15s;
+  }
+  .map-open:hover { border-color: var(--accent); }
+  .map-open svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .map-modal {
+    position: fixed; inset: 0; z-index: 300; padding: 24px;
+    background: rgba(0,0,0,.5);
+    display: none; align-items: center; justify-content: center;
+  }
+  .map-modal.show { display: flex; }
+  .map-box {
+    width: min(920px, 100%); height: min(640px, 100%);
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: 0 16px 48px rgba(0,0,0,.28);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .map-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .map-title {
+    flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .map-head .icon-btn { width: 30px; height: 30px; border-radius: 6px; }
+  .map-head .icon-btn svg { width: 15px; height: 15px; }
+  .map-frame { flex: 1; border: 0; width: 100%; background: var(--bg); }
+
+  /* ---------- 世界地图模式 ---------- */
+  .world-map-view {
+    height: 100%; min-height: 440px; margin-top: 18px;
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .world-map-stage { position: relative; flex: 1; min-height: 380px; background: var(--accent-soft); touch-action: none; }
+  .world-map-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .world-country {
+    fill: var(--panel); stroke: var(--border-strong); stroke-width: .65;
+    vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .12s;
+  }
+  .world-country.map-asia { fill: var(--map-asia); }
+  .world-country.map-europe { fill: var(--map-europe); }
+  .world-country.map-north-america { fill: var(--map-north-america); }
+  .world-country.map-south-america { fill: var(--map-south-america); }
+  .world-country.map-africa { fill: var(--map-africa); }
+  .world-country.map-oceania { fill: var(--map-oceania); }
+  .world-country.map-antarctica { fill: var(--map-antarctica); }
+  .world-country:hover, .world-country:focus { fill: var(--accent-soft); outline: none; }
+  .world-country.selected { fill: var(--accent); stroke: var(--accent-hover); }
+  .world-map-status {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    padding: 20px; color: var(--text-muted); font-size: 13px; text-align: center;
+  }
+  .world-map-credit {
+    position: absolute; right: 10px; bottom: 7px; color: var(--text-faint); font-size: 11px;
+    pointer-events: none;
+  }
+  .world-map-controls {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    display: flex; align-items: center; overflow: hidden;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--panel); box-shadow: var(--shadow);
+  }
+  .map-zoom-btn {
+    width: 31px; height: 31px; padding: 0; border: 0; background: transparent; color: var(--text);
+    font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  .map-zoom-btn + .map-zoom-btn { border-left: 1px solid var(--border); }
+  .map-zoom-btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+  .map-zoom-btn:disabled { color: var(--text-faint); cursor: default; }
+  .map-zoom-reset { width: 43px; font-size: 11px; color: var(--text-muted); }
+  .map-help {
+    width: 31px; height: 31px; padding: 0; border: 0; background: transparent;
+    color: var(--text-muted); cursor: help; display: grid; place-items: center;
+  }
+  .map-help + .map-zoom-btn { border-left: 1px solid var(--border); }
+  .map-help:hover, .map-help:focus { background: var(--accent-soft); color: var(--accent); outline: none; }
+  .map-help svg { width: 16px; height: 16px; }
+  main.map-active { padding: 0; overflow: hidden; }
+  main.map-active .world-map-view {
+    min-height: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
+  }
+  main.map-active .world-map-stage { min-height: 0; }
+
   /* ---------- Toast ---------- */
   #toast {
     position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -354,6 +465,10 @@
     }
     .detail.visible { display: flex; }
     .detail-close { display: grid; }
+    .map-modal { padding: 10px; }
+    .view-toggle { padding: 0 10px; }
+    .world-map-view { min-height: 360px; margin-top: 12px; }
+    .world-map-stage { min-height: 320px; }
   }
 </style>
 </head>
@@ -388,6 +503,7 @@
     <kbd class="search-hint">/</kbd>
   </div>
   <div class="stat" id="statBar"></div>
+  <button class="view-toggle" id="viewToggle" type="button" aria-pressed="false" title="切换地图模式" aria-label="切换地图模式" data-i18n-title="mapMode" data-i18n-aria="mapMode"></button>
 </div>
 
 <div class="tabs" id="tabs"></div>
@@ -408,6 +524,22 @@
     </div>
     <div class="detail-body" id="detailBody"></div>
   </aside>
+</div>
+
+<!-- 地图查看模态框：iframe 内嵌 Google Maps（output=embed 免 key），打开时才设置 src -->
+<div class="map-modal" id="mapModal" role="dialog" aria-modal="true">
+  <div class="map-box">
+    <div class="map-head">
+      <span class="map-title" id="mapTitle">—</span>
+      <a class="icon-btn" id="mapExt" href="#" target="_blank" rel="noopener noreferrer" title="在新标签页打开" aria-label="在新标签页打开" data-i18n-title="openFullMap" data-i18n-aria="openFullMap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+      <button class="icon-btn" id="mapClose" title="关闭地图" aria-label="关闭地图" data-i18n-title="closeMap" data-i18n-aria="closeMap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <iframe class="map-frame" id="mapFrame" title="map" loading="lazy" referrerpolicy="no-referrer"></iframe>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -702,14 +834,27 @@ const I18N = {
   searchPh:    { 'zh-CN':'搜索中文名、英文名、国家码、货币或区号（如：美国、CN、USD、+86）…','zh-TW':'搜尋中文名、英文名、國家碼、貨幣或區號（如：美國、CN、USD、+86）…','en':'Search by name, country code, currency or dial code (e.g. US, CN, USD, +86)…','ja':'国名、コード、通貨、国番号で検索（例：日本、CN、USD、+86）…','ko':'이름, 국가코드, 통화 또는 국가번호로 검색 (예: 미국, CN, USD, +86)…','th':'ค้นหาตามชื่อ รหัสประเทศ สกุลเงิน หรือรหัสโทร (เช่น สหรัฐ, CN, USD, +86)…','ms':'Cari mengikut nama, kod negara, mata wang atau kod panggilan (cth. AS, CN, USD, +86)…' },
   clearSearch: { 'zh-CN':'清空搜索','zh-TW':'清空搜尋','en':'Clear search','ja':'検索をクリア','ko':'검색 지우기','th':'ล้างการค้นหา','ms':'Kosongkan carian' },
   stat:        { 'zh-CN':'共 {n} 个 · 匹配 {m} 个','zh-TW':'共 {n} 個 · 符合 {m} 個','en':'{n} total · {m} matched','ja':'全 {n} 件 · 一致 {m} 件','ko':'전체 {n}개 · 일치 {m}개','th':'ทั้งหมด {n} · ตรง {m}','ms':'{n} jumlah · {m} sepadan' },
+  mapMode:     { 'zh-CN':'地图模式','zh-TW':'地圖模式','en':'Map view','ja':'地図表示','ko':'지도 보기','th':'มุมมองแผนที่','ms':'Paparan peta' },
+  listMode:    { 'zh-CN':'列表模式','zh-TW':'清單模式','en':'List view','ja':'リスト表示','ko':'목록 보기','th':'มุมมองรายการ','ms':'Paparan senarai' },
+  worldMap:    { 'zh-CN':'世界地图','zh-TW':'世界地圖','en':'World map','ja':'世界地図','ko':'세계 지도','th':'แผนที่โลก','ms':'Peta dunia' },
+  worldMapHint:{ 'zh-CN':'悬浮查看信息，点击国家打开详情；双指拖动移动，捏合缩放','zh-TW':'懸浮查看資訊，點擊國家開啟詳細資訊；雙指拖曳移動，捏合縮放','en':'Hover for info, click for details; drag with two fingers to pan and pinch to zoom','ja':'ホバーで情報を確認し、クリックで詳細を開き、2本指で移動・ピンチで拡大縮小できます','ko':'마우스를 올려 정보를 보고 클릭해 세부 정보를 열며, 두 손가락으로 이동하고 핀치로 확대/축소합니다','th':'วางเมาส์เพื่อดูข้อมูล คลิกเพื่อเปิดรายละเอียด ลากสองนิ้วเพื่อเลื่อนและบีบเพื่อซูม','ms':'Tuding untuk melihat maklumat, klik untuk butiran, seret dua jari untuk alih dan cubit untuk zum' },
+  mapLoading:  { 'zh-CN':'正在加载国家边界…','zh-TW':'正在載入國家邊界…','en':'Loading country borders…','ja':'国境を読み込んでいます…','ko':'국경을 불러오는 중…','th':'กำลังโหลดเส้นขอบประเทศ…','ms':'Memuatkan sempadan negara…' },
+  mapFailed:   { 'zh-CN':'地图加载失败，请检查网络后重试。','zh-TW':'地圖載入失敗，請檢查網路後重試。','en':'Could not load the map. Check your connection and try again.','ja':'地図を読み込めませんでした。ネットワークを確認して再試行してください。','ko':'지도를 불러오지 못했습니다. 네트워크를 확인한 후 다시 시도하세요.','th':'โหลดแผนที่ไม่สำเร็จ โปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง','ms':'Peta tidak dapat dimuatkan. Semak sambungan anda dan cuba lagi.' },
+  mapCredit:   { 'zh-CN':'地图边界：Natural Earth','zh-TW':'地圖邊界：Natural Earth','en':'Borders: Natural Earth','ja':'国境：Natural Earth','ko':'국경: Natural Earth','th':'เส้นขอบ: Natural Earth','ms':'Sempadan: Natural Earth' },
+  mapZoomIn:   { 'zh-CN':'放大地图','zh-TW':'放大地圖','en':'Zoom in','ja':'拡大','ko':'확대','th':'ซูมเข้า','ms':'Zum masuk' },
+  mapZoomOut:  { 'zh-CN':'缩小地图','zh-TW':'縮小地圖','en':'Zoom out','ja':'縮小','ko':'축소','th':'ซูมออก','ms':'Zum keluar' },
+  mapZoomReset:{ 'zh-CN':'重置缩放','zh-TW':'重設縮放','en':'Reset zoom','ja':'ズームをリセット','ko':'확대/축소 재설정','th':'รีเซ็ตการซูม','ms':'Tetapkan semula zum' },
   // 标签 / 大洲
   all:         { 'zh-CN':'全部','zh-TW':'全部','en':'All','ja':'すべて','ko':'전체','th':'ทั้งหมด','ms':'Semua' },
+  favoritesTab:{ 'zh-CN':'⭐ 收藏','zh-TW':'⭐ 收藏','en':'⭐ Favorites','ja':'⭐ お気に入り','ko':'⭐ 즐겨찾기','th':'⭐ รายการโปรด','ms':'⭐ Kegemaran' },
   clear:       { 'zh-CN':'清空','zh-TW':'清空','en':'Clear','ja':'クリア','ko':'비우기','th':'ล้าง','ms':'Kosongkan' },
   favTitle:    { 'zh-CN':'⭐ 收藏','zh-TW':'⭐ 收藏','en':'⭐ Favorites','ja':'⭐ お気に入り','ko':'⭐ 즐겨찾기','th':'⭐ รายการโปรด','ms':'⭐ Kegemaran' },
   recentTitle: { 'zh-CN':'🕘 最近使用','zh-TW':'🕘 最近使用','en':'🕘 Recent','ja':'🕘 最近使用','ko':'🕘 최근 사용','th':'🕘 ล่าสุด','ms':'🕘 Terbaru' },
   // 空状态
   emptyT:      { 'zh-CN':'没有匹配的国家或地区','zh-TW':'沒有符合的國家或地區','en':'No matching country or region','ja':'一致する国・地域がありません','ko':'일치하는 국가/지역이 없습니다','th':'ไม่พบประเทศหรือภูมิภาคที่ตรง','ms':'Tiada negara atau wilayah yang sepadan' },
   emptyD:      { 'zh-CN':'试试中文名、英文名、两位国家码（CN）、货币码（USD）或电话区号（+86）。','zh-TW':'試試中文名、英文名、兩位國家碼（CN）、貨幣碼（USD）或電話區號（+86）。','en':'Try a name, 2-letter code (CN), currency code (USD) or dial code (+86).','ja':'国名、2文字コード（CN）、通貨コード（USD）、国番号（+86）をお試しください。','ko':'이름, 2자리 코드(CN), 통화 코드(USD) 또는 국가번호(+86)를 시도해 보세요.','th':'ลองชื่อ รหัส 2 ตัว(CN) รหัสสกุลเงิน(USD) หรือรหัสโทร(+86)','ms':'Cuba nama, kod 2-huruf (CN), kod mata wang (USD) atau kod panggilan (+86).' },
+  favEmptyT:   { 'zh-CN':'还没有收藏','zh-TW':'還沒有收藏','en':'No favorites yet','ja':'お気に入りはまだありません','ko':'즐겨찾기가 없습니다','th':'ยังไม่มีรายการโปรด','ms':'Belum ada kegemaran' },
+  favEmptyD:   { 'zh-CN':'点击国家卡片右上角的星标，即可将它加入这里。','zh-TW':'點擊國家卡片右上角的星號，即可將它加入這裡。','en':'Use the star in the top-right corner of a country card to add it here.','ja':'国カード右上の星を押すと、ここに追加されます。','ko':'국가 카드 오른쪽 위의 별표를 눌러 여기에 추가하세요.','th':'กดดาวที่มุมขวาบนของการ์ดประเทศเพื่อเพิ่มไว้ที่นี่','ms':'Tekan bintang di penjuru kanan atas kad negara untuk menambahkannya di sini.' },
   // 详情面板
   fav:         { 'zh-CN':'收藏','zh-TW':'收藏','en':'Favorite','ja':'お気に入り','ko':'즐겨찾기','th':'ถูกใจ','ms':'Kegemaran' },
   closeDetail: { 'zh-CN':'关闭详情','zh-TW':'關閉詳情','en':'Close details','ja':'詳細を閉じる','ko':'상세 닫기','th':'ปิดรายละเอียด','ms':'Tutup butiran' },
@@ -726,6 +871,11 @@ const I18N = {
   curFmt:      { 'zh-CN':'格式示例：{x}','zh-TW':'格式範例：{x}','en':'Format example: {x}','ja':'書式例：{x}','ko':'서식 예: {x}','th':'ตัวอย่างรูปแบบ: {x}','ms':'Contoh format: {x}' },
   tzTitle:     { 'zh-CN':'时区（当前时间）','zh-TW':'時區（目前時間）','en':'Time zones (current time)','ja':'タイムゾーン（現在時刻）','ko':'시간대 (현재 시간)','th':'เขตเวลา (เวลาปัจจุบัน)','ms':'Zon waktu (waktu semasa)' },
   tzOverflow:  { 'zh-CN':'共 {n} 个时区，仅展示前 5 个','zh-TW':'共 {n} 個時區，僅顯示前 5 個','en':'{n} time zones, showing first 5','ja':'全 {n} タイムゾーン、最初の5件のみ表示','ko':'총 {n}개 시간대, 처음 5개만 표시','th':'ทั้งหมด {n} เขตเวลา แสดง 5 อันแรก','ms':'{n} zon waktu, memaparkan 5 yang pertama' },
+  // 地图
+  mapSec:      { 'zh-CN':'地图','zh-TW':'地圖','en':'Map','ja':'地図','ko':'지도','th':'แผนที่','ms':'Peta' },
+  viewMap:     { 'zh-CN':'在地图中查看','zh-TW':'在地圖中檢視','en':'View on map','ja':'地図で見る','ko':'지도에서 보기','th':'ดูบนแผนที่','ms':'Lihat pada peta' },
+  openFullMap: { 'zh-CN':'在新标签页打开','zh-TW':'在新分頁開啟','en':'Open in new tab','ja':'新しいタブで開く','ko':'새 탭에서 열기','th':'เปิดในแท็บใหม่','ms':'Buka dalam tab baharu' },
+  closeMap:    { 'zh-CN':'关闭地图','zh-TW':'關閉地圖','en':'Close map','ja':'地図を閉じる','ko':'지도 닫기','th':'ปิดแผนที่','ms':'Tutup peta' },
   // Toast
   copyPrefix:  { 'zh-CN':'复制','zh-TW':'複製','en':'Copy','ja':'コピー','ko':'복사','th':'คัดลอก','ms':'Salin' },
   copied:      { 'zh-CN':'已复制 {l}：{t}','zh-TW':'已複製 {l}：{t}','en':'Copied {l}: {t}','ja':'{l} をコピーしました：{t}','ko':'{l} 복사됨: {t}','th':'คัดลอก {l} แล้ว: {t}','ms':'{l} disalin: {t}' },
@@ -768,6 +918,7 @@ let query = '';
 let selectedA2 = null;
 let tzTimer = null;
 let lang = 'zh-CN';  // 当前界面语言
+let viewMode = 'list';
 
 function readLS(key, fallback) {
   try {
@@ -808,7 +959,10 @@ function localReg(reg) {
 }
 // 取 tab 显示名：全部走 t()，大洲走 localReg()
 function localTabLabel(key) {
-  return key === '全部' ? t('all') : localReg(key);
+  if (key === '全部') return t('all');
+  if (key === '收藏') return t('favoritesTab');
+  if (key === '最近使用') return t('recentTitle');
+  return localReg(key);
 }
 // Intl 用的 locale（时间/货币格式化）
 function intlLocale() {
@@ -821,6 +975,22 @@ const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 const SVG_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
 const SVG_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+const SVG_MAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+const SVG_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>';
+const WORLD_GEOJSON_URL = 'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson';
+let worldGeoJSONPromise = null;
+let worldMapRenderToken = 0;
+
+function renderViewToggle() {
+  const btn = $('viewToggle');
+  const isMap = viewMode === 'map';
+  btn.classList.toggle('active', isMap);
+  btn.setAttribute('aria-pressed', String(isMap));
+  btn.title = t(isMap ? 'listMode' : 'mapMode');
+  btn.setAttribute('aria-label', btn.title);
+  btn.innerHTML = SVG_MAP;
+  btn.appendChild(document.createTextNode(t(isMap ? 'listMode' : 'mapMode')));
+}
 
 /* ---------- 搜索 ---------- */
 function matchCountry(c, q) {
@@ -841,7 +1011,9 @@ function matchCountry(c, q) {
 
 function visibleCountries() {
   let list = COUNTRY_DATA;
-  if (activeTab !== '全部') list = list.filter(c => c.reg === activeTab);
+  if (activeTab === '收藏') list = list.filter(c => favs.has(c.a2));
+  else if (activeTab === '最近使用') list = recent.map(byA2).filter(Boolean);
+  else if (activeTab !== '全部') list = list.filter(c => c.reg === activeTab);
   if (query) list = list.filter(c => matchCountry(c, query));
   return list;
 }
@@ -849,7 +1021,7 @@ function visibleCountries() {
 /* ---------- 渲染：tabs ---------- */
 function renderTabs() {
   tabsEl.textContent = '';
-  for (const name of ['全部', ...REGIONS]) {
+  for (const name of ['全部', '收藏', '最近使用', ...REGIONS]) {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (name === activeTab ? ' active' : '');
     btn.textContent = localTabLabel(name);
@@ -934,9 +1106,270 @@ function sectionEl(title, list, opts = {}) {
 
 function byA2(a2) { return COUNTRY_DATA.find(c => c.a2 === a2); }
 
+function loadWorldGeoJSON() {
+  if (!worldGeoJSONPromise) {
+    worldGeoJSONPromise = fetch(WORLD_GEOJSON_URL)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data.features)) throw new Error('Invalid GeoJSON');
+        return data;
+      })
+      .catch(err => {
+        worldGeoJSONPromise = null;
+        throw err;
+      });
+  }
+  return worldGeoJSONPromise;
+}
+
+function mapPoint(point) {
+  const lon = Math.max(-180, Math.min(180, Number(point[0])));
+  const lat = Math.max(-90, Math.min(90, Number(point[1])));
+  return [((lon + 180) / 360 * 1000).toFixed(2), ((90 - lat) / 180 * 500).toFixed(2)];
+}
+
+function mapPath(geometry) {
+  const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+  return polygons.map(polygon => polygon.map(ring => ring.map((point, i) => {
+    const [x, y] = mapPoint(point);
+    return `${i ? 'L' : 'M'}${x},${y}`;
+  }).join('') + 'Z').join('')).join('');
+}
+
+function worldMapRegionClass(reg) {
+  return {
+    '亚洲': 'map-asia',
+    '欧洲': 'map-europe',
+    '北美洲': 'map-north-america',
+    '南美洲': 'map-south-america',
+    '非洲': 'map-africa',
+    '大洋洲': 'map-oceania',
+    '南极洲': 'map-antarctica',
+  }[reg] || '';
+}
+
+function syncMapSelection() {
+  document.querySelectorAll('.world-country').forEach(path => {
+    path.classList.toggle('selected', path.dataset.a2 === selectedA2);
+  });
+}
+
+function setWorldMapViewport(svg, zoom, panX = 0, panY = 0) {
+  const next = Math.max(1, Math.min(4, Math.round(zoom * 100) / 100));
+  const maxX = 500 * (next - 1);
+  const maxY = 250 * (next - 1);
+  const x = Math.max(-maxX, Math.min(maxX, panX));
+  const y = Math.max(-maxY, Math.min(maxY, panY));
+  const layer = svg.querySelector('.world-map-layer');
+  if (!layer) return;
+  layer.setAttribute('transform', `translate(${500 * (1 - next) + x} ${250 * (1 - next) + y}) scale(${next})`);
+  svg.dataset.zoom = String(next);
+  svg.dataset.panX = String(x);
+  svg.dataset.panY = String(y);
+  const out = svg.parentElement.querySelector('[data-map-zoom="out"]');
+  const reset = svg.parentElement.querySelector('[data-map-zoom="reset"]');
+  if (out) out.disabled = next === 1;
+  if (reset) reset.textContent = `${Math.round(next * 100)}%`;
+}
+
+function setWorldMapZoom(svg, zoom) {
+  const currentZoom = Number(svg.dataset.zoom || 1);
+  const factor = zoom / currentZoom;
+  setWorldMapViewport(
+    svg,
+    zoom,
+    zoom === 1 ? 0 : Number(svg.dataset.panX || 0) * factor,
+    zoom === 1 ? 0 : Number(svg.dataset.panY || 0) * factor,
+  );
+}
+
+function mapGestureIntent(panDistance, distanceChange) {
+  const threshold = 8;
+  if (Math.max(panDistance, distanceChange) < threshold) return null;
+  return distanceChange >= panDistance ? 'pinch' : 'pan';
+}
+
+function enableMapGestures(stage, svg) {
+  const pointers = new Map();
+  let gesture = null;
+  const startGesture = () => {
+    if (pointers.size !== 2) return;
+    if (Number(svg.dataset.zoom || 1) === 1) setWorldMapZoom(svg, 1.5);
+    const [a, b] = [...pointers.values()];
+    gesture = {
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+      distance: Math.hypot(a.x - b.x, a.y - b.y),
+      zoom: Number(svg.dataset.zoom || 1),
+      panX: Number(svg.dataset.panX || 0),
+      panY: Number(svg.dataset.panY || 0),
+      moved: new Set(),
+      mode: null,
+    };
+  };
+  stage.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    startGesture();
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!gesture || pointers.size !== 2) return;
+    gesture.moved.add(e.pointerId);
+    if (gesture.moved.size < 2) return;
+    const [a, b] = [...pointers.values()];
+    const rect = svg.getBoundingClientRect();
+    const midpointX = (a.x + b.x) / 2;
+    const midpointY = (a.y + b.y) / 2;
+    const distance = Math.hypot(a.x - b.x, a.y - b.y);
+    if (!gesture.mode) {
+      gesture.mode = mapGestureIntent(
+        Math.hypot(midpointX - gesture.x, midpointY - gesture.y),
+        Math.abs(distance - gesture.distance),
+      );
+      if (!gesture.mode) return;
+    }
+    if (gesture.mode === 'pinch') {
+      setWorldMapViewport(svg, gesture.zoom * distance / gesture.distance, gesture.panX, gesture.panY);
+    } else {
+      setWorldMapViewport(
+        svg,
+        gesture.zoom,
+        gesture.panX + ((midpointX - gesture.x) * 1000 / rect.width),
+        gesture.panY + ((midpointY - gesture.y) * 500 / rect.height),
+      );
+    }
+    e.preventDefault();
+  }, { passive: false });
+  const endGesture = e => {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) gesture = null;
+  };
+  stage.addEventListener('pointerup', endGesture);
+  stage.addEventListener('pointercancel', endGesture);
+  stage.addEventListener('wheel', e => {
+    let zoom = Number(svg.dataset.zoom || 1);
+    if (e.ctrlKey || e.metaKey) {
+      setWorldMapZoom(svg, zoom * Math.exp(-e.deltaY * .01));
+      e.preventDefault();
+      return;
+    }
+    if (zoom <= 1) {
+      setWorldMapZoom(svg, 1.5);
+      zoom = 1.5;
+    }
+    const rect = svg.getBoundingClientRect();
+    setWorldMapViewport(
+      svg,
+      zoom,
+      Number(svg.dataset.panX || 0) - e.deltaX * 1000 / rect.width,
+      Number(svg.dataset.panY || 0) - e.deltaY * 500 / rect.height,
+    );
+    e.preventDefault();
+  }, { passive: false });
+}
+
+function drawWorldMap(svg, status, token, countries) {
+  loadWorldGeoJSON().then(data => {
+    if (token !== worldMapRenderToken || !svg.isConnected) return;
+    status.remove();
+    const countriesByA3 = new Map(COUNTRY_DATA.map(c => [c.a3, c]));
+    const visibleA3 = new Set(countries.map(c => c.a3));
+    for (const feature of data.features) {
+      const country = countriesByA3.get(feature.id);
+      if (!country || !visibleA3.has(country.a3) || !feature.geometry || !['Polygon', 'MultiPolygon'].includes(feature.geometry.type)) continue;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.classList.add('world-country');
+      path.classList.add(worldMapRegionClass(country.reg));
+      path.dataset.a2 = country.a2;
+      path.setAttribute('d', mapPath(feature.geometry));
+      path.setAttribute('fill-rule', 'evenodd');
+      path.setAttribute('tabindex', '0');
+      path.setAttribute('role', 'button');
+      path.setAttribute('aria-label', localName(country));
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      label.textContent = `${country.flag} ${localName(country)} · ${country.en}`;
+      path.appendChild(label);
+      path.addEventListener('mouseenter', e => showTooltip(e.currentTarget, `${country.flag} ${localName(country)} · ${country.en}`));
+      path.addEventListener('mouseleave', hideTooltip);
+      path.addEventListener('click', () => selectCountry(country.a2));
+      path.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCountry(country.a2); }
+      });
+      svg.querySelector('.world-map-layer').appendChild(path);
+    }
+    syncMapSelection();
+  }).catch(() => {
+    if (token === worldMapRenderToken && status.isConnected) status.textContent = t('mapFailed');
+  });
+}
+
+function worldMapEl(countries) {
+  const wrap = document.createElement('section');
+  wrap.className = 'world-map-view';
+  const stage = document.createElement('div');
+  stage.className = 'world-map-stage';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('world-map-canvas');
+  svg.setAttribute('viewBox', '0 0 1000 500');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('aria-label', t('worldMap'));
+  svg.setAttribute('role', 'img');
+  const layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  layer.classList.add('world-map-layer');
+  const status = document.createElement('div');
+  status.className = 'world-map-status';
+  status.textContent = t('mapLoading');
+  const credit = document.createElement('span');
+  credit.className = 'world-map-credit';
+  credit.textContent = t('mapCredit');
+  const controls = document.createElement('div');
+  controls.className = 'world-map-controls';
+  const help = document.createElement('button');
+  help.className = 'map-help';
+  help.type = 'button';
+  help.title = t('worldMapHint');
+  help.setAttribute('aria-label', t('worldMapHint'));
+  help.innerHTML = SVG_INFO;
+  help.addEventListener('mouseenter', () => showTooltip(help, t('worldMapHint'), 'end'));
+  help.addEventListener('mouseleave', hideTooltip);
+  help.addEventListener('focus', () => showTooltip(help, t('worldMapHint'), 'end'));
+  help.addEventListener('blur', hideTooltip);
+  controls.appendChild(help);
+  const zoomButton = (key, text, action) => {
+    const btn = document.createElement('button');
+    btn.className = 'map-zoom-btn' + (key === 'reset' ? ' map-zoom-reset' : '');
+    btn.type = 'button';
+    btn.dataset.mapZoom = key;
+    btn.title = t(key === 'in' ? 'mapZoomIn' : key === 'out' ? 'mapZoomOut' : 'mapZoomReset');
+    btn.setAttribute('aria-label', btn.title);
+    btn.textContent = text;
+    btn.addEventListener('click', action);
+    controls.appendChild(btn);
+  };
+  zoomButton('out', '−', () => setWorldMapZoom(svg, Number(svg.dataset.zoom || 1) - .5));
+  zoomButton('reset', '100%', () => setWorldMapZoom(svg, 1));
+  zoomButton('in', '+', () => setWorldMapZoom(svg, Number(svg.dataset.zoom || 1) + .5));
+  svg.appendChild(layer);
+  stage.appendChild(svg);
+  stage.appendChild(status);
+  stage.appendChild(controls);
+  stage.appendChild(credit);
+  wrap.appendChild(stage);
+  setWorldMapZoom(svg, 1);
+  enableMapGestures(stage, svg);
+  drawWorldMap(svg, status, ++worldMapRenderToken, countries);
+  return wrap;
+}
+
 function renderMain() {
   mainEl.textContent = '';
   const list = visibleCountries();
+  mainEl.classList.toggle('map-active', viewMode === 'map');
   // 重建统计条（本地化文案 + 粗体数字，数字用 textContent 安全写入）
   const statBar = $('statBar');
   statBar.textContent = '';
@@ -948,23 +1381,9 @@ function renderMain() {
     else statBar.appendChild(document.createTextNode(p));
   }
 
-  const favList = [...favs].map(byA2).filter(Boolean);
-  const recentList = recent.map(byA2).filter(Boolean);
-
-  // 「全部」且无搜索词时，顶部展示收藏与最近使用
-  if (activeTab === '全部' && !query) {
-    if (favList.length) {
-      mainEl.appendChild(sectionEl(t('favTitle'), favList, {
-        clearable: true,
-        onClear: () => { favs.clear(); writeLS(LS_FAV, []); syncStars(); renderMain(); refreshDetailFav(); toast(t('favCleared')); },
-      }));
-    }
-    if (recentList.length) {
-      mainEl.appendChild(sectionEl(t('recentTitle'), recentList, {
-        clearable: true,
-        onClear: () => { recent = []; writeLS(LS_RECENT, []); renderMain(); toast(t('recentCleared')); },
-      }));
-    }
+  if (viewMode === 'map') {
+    mainEl.appendChild(worldMapEl(list));
+    return;
   }
 
   if (!list.length) {
@@ -972,11 +1391,12 @@ function renderMain() {
     empty.className = 'empty-state';
     const big = document.createElement('div');
     big.className = 'big';
-    big.textContent = '🔍';
+    const isFavorites = activeTab === '收藏';
+    big.textContent = isFavorites ? '⭐' : '🔍';
     const h3 = document.createElement('h3');
-    h3.textContent = t('emptyT');
+    h3.textContent = t(isFavorites ? 'favEmptyT' : 'emptyT');
     const p = document.createElement('p');
-    p.textContent = t('emptyD');
+    p.textContent = t(isFavorites ? 'favEmptyD' : 'emptyD');
     empty.appendChild(big); empty.appendChild(h3); empty.appendChild(p);
     mainEl.appendChild(empty);
     return;
@@ -987,8 +1407,13 @@ function renderMain() {
       const sub = list.filter(c => c.reg === reg);
       if (sub.length) mainEl.appendChild(sectionEl(localReg(reg), sub));
     }
+  } else if (activeTab === '最近使用') {
+    mainEl.appendChild(sectionEl(t('recentTitle'), list, {
+      clearable: true,
+      onClear: () => { recent = []; writeLS(LS_RECENT, []); renderMain(); toast(t('recentCleared')); },
+    }));
   } else {
-    mainEl.appendChild(sectionEl(localReg(activeTab), list));
+    mainEl.appendChild(sectionEl(activeTab === '收藏' ? t('favTitle') : localReg(activeTab), list));
   }
 }
 
@@ -999,13 +1424,13 @@ function toggleFav(a2) {
   writeLS(LS_FAV, [...favs]);
   syncStars();
   refreshDetailFav();
-  if (activeTab === '全部' && !query) renderMain();
+  if (activeTab === '收藏') renderMain();
 }
 
 function pushRecent(a2) {
   recent = [a2, ...recent.filter(x => x !== a2)].slice(0, RECENT_MAX);
   writeLS(LS_RECENT, recent);
-  if (activeTab === '全部' && !query) renderMain();
+  if (activeTab === '最近使用') renderMain();
 }
 
 function syncStars() {
@@ -1076,6 +1501,14 @@ function renderDetail() {
   detailBody.appendChild(detailRow(t('region'), localReg(c.reg)));
   if (c.lang) detailBody.appendChild(detailRow(t('language'), c.lang));
 
+  detailBody.appendChild(sectionTitle(t('mapSec')));
+  const mapBtn = document.createElement('button');
+  mapBtn.className = 'map-open';
+  mapBtn.innerHTML = SVG_MAP; // 静态常量
+  mapBtn.appendChild(document.createTextNode(t('viewMap')));
+  mapBtn.addEventListener('click', () => openMap(c));
+  detailBody.appendChild(mapBtn);
+
   if (c.cur.length) {
     detailBody.appendChild(sectionTitle(t('currency')));
     for (const cur of c.cur) {
@@ -1130,6 +1563,7 @@ function selectCountry(a2) {
   detailEl.classList.add('visible');
   document.querySelectorAll('.country-card').forEach(card =>
     card.classList.toggle('selected', card.dataset.a2 === a2));
+  syncMapSelection();
   pushRecent(a2);
   startTzTimer();
 }
@@ -1140,6 +1574,7 @@ function closeDetail() {
   detailEl.classList.remove('visible');
   stopTzTimer();
   document.querySelectorAll('.country-card.selected').forEach(el => el.classList.remove('selected'));
+  syncMapSelection();
 }
 
 /* 详情打开时每 30s 刷新时区时间 */
@@ -1150,6 +1585,21 @@ function startTzTimer() {
 function stopTzTimer() {
   if (tzTimer) { clearInterval(tzTimer); tzTimer = null; }
 }
+
+/* ---------- 地图查看 ---------- */
+// 内嵌 Google Maps（output=embed 免 key），按英文名定位自动取景；外链用官方 search URL
+function openMap(c) {
+  $('mapTitle').textContent = `${c.flag} ${localName(c)}`;
+  $('mapFrame').src = `https://maps.google.com/maps?q=${encodeURIComponent(c.en)}&hl=${lang}&output=embed`;
+  $('mapExt').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.en)}`;
+  $('mapModal').classList.add('show');
+}
+function closeMap() {
+  $('mapModal').classList.remove('show');
+  $('mapFrame').src = ''; // 停止加载、释放资源
+}
+$('mapClose').addEventListener('click', closeMap);
+$('mapModal').addEventListener('click', e => { if (e.target === $('mapModal')) closeMap(); });
 
 /* ---------- 复制 / Toast / Tooltip ---------- */
 let toastTimer = null;
@@ -1179,14 +1629,15 @@ async function copyText_(text, label) {
 }
 
 const tooltipEl = $('tooltip');
-function showTooltip(anchor, text) {
+function showTooltip(anchor, text, align = 'center') {
   tooltipEl.textContent = text;
   const r = anchor.getBoundingClientRect();
   tooltipEl.style.left = (r.left + r.width / 2) + 'px';
   tooltipEl.style.top = r.top + 'px';
+  tooltipEl.style.transform = align === 'end' ? 'translate(-100%, -100%)' : '';
   tooltipEl.classList.add('show');
 }
-function hideTooltip() { tooltipEl.classList.remove('show'); }
+function hideTooltip() { tooltipEl.classList.remove('show'); tooltipEl.style.transform = ''; }
 
 /* ---------- 主题 ---------- */
 function applyTheme(theme) {
@@ -1219,6 +1670,11 @@ clearSearchBtn.addEventListener('click', () => {
 });
 $('detailClose').addEventListener('click', closeDetail);
 $('detailFav').addEventListener('click', () => { if (selectedA2) toggleFav(selectedA2); });
+$('viewToggle').addEventListener('click', () => {
+  viewMode = viewMode === 'map' ? 'list' : 'map';
+  renderViewToggle();
+  renderMain();
+});
 
 document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -1227,12 +1683,18 @@ document.addEventListener('keydown', e => {
     searchInput.focus();
     searchInput.select();
   } else if (e.key === 'Escape') {
-    if (typing) {
+    if (viewMode === 'map') {
+      viewMode = 'list';
+      renderViewToggle();
+      renderMain();
+    } else if (typing) {
       searchInput.value = '';
       query = '';
       clearSearchBtn.classList.remove('show');
       renderMain();
       searchInput.blur();
+    } else if ($('mapModal').classList.contains('show')) {
+      closeMap();
     } else if (selectedA2) {
       closeDetail();
     }
@@ -1278,6 +1740,7 @@ function setLang(code) {
   try { localStorage.setItem(LS_LANG, code); } catch { /* 忽略 */ }
   renderLangMenu();
   applyStaticI18n();
+  renderViewToggle();
   renderTabs();
   renderMain();
   if (selectedA2) renderDetail();
@@ -1320,6 +1783,7 @@ try {
 initTheme();
 renderLangMenu();
 applyStaticI18n();
+renderViewToggle();
 renderTabs();
 renderMain();
 </script>
