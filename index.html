@@ -81,6 +81,27 @@
   header .icon-btn { border: none; background: transparent; }
   header .icon-btn:hover { background: var(--bg); }
 
+  /* ---------- 语言切换器 ---------- */
+  .lang-wrap { position: relative; flex-shrink: 0; }
+  .lang-btn { width: 36px; height: 36px; border-radius: 8px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; display: grid; place-items: center; transition: all .15s; font-size: 16px; }
+  .lang-btn:hover { color: var(--text); background: var(--bg); }
+  .lang-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 100;
+    min-width: 160px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow); padding: 6px;
+    display: none;
+  }
+  .lang-menu.show { display: block; }
+  .lang-item {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 10px; border: 0; background: transparent; color: var(--text-muted);
+    font-size: 13px; cursor: pointer; border-radius: 6px; transition: all .12s; text-align: left;
+  }
+  .lang-item:hover { background: var(--bg); color: var(--text); }
+  .lang-item.active { color: var(--accent); background: var(--accent-soft); }
+  .lang-item .check { margin-left: auto; color: var(--accent); }
+  .lang-item:not(.active) .check { visibility: hidden; }
+
   /* ---------- Toolbar ---------- */
   .toolbar {
     display: flex; align-items: center; gap: 10px;
@@ -342,14 +363,18 @@
   <div class="logo">
     <div class="mark">🌐</div>
     <div>
-      国家信息速查
-      <div class="sub">国家码 / 货币 / 区号 / 时区</div>
+      <span id="appTitle">国家信息速查</span>
+      <div class="sub" id="appSub">国家码 / 货币 / 区号 / 时区</div>
     </div>
   </div>
   <div class="spacer"></div>
-  <a class="icon-btn" href="https://github.com/wangruofeng/country-info" target="_blank" rel="noopener noreferrer" title="查看 GitHub 源码" aria-label="GitHub 源码仓库">
+  <a class="icon-btn" id="githubLink" href="https://github.com/wangruofeng/country-info" target="_blank" rel="noopener noreferrer" title="查看 GitHub 源码" aria-label="GitHub 源码仓库">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.78 0 12.292c0 5.211 3.438 9.63 8.205 11.188.6.111.82-.254.82-.567 0-.28-.01-1.022-.015-2.005-3.338.711-4.042-1.582-4.042-1.582-.546-1.361-1.335-1.725-1.335-1.725-1.087-.731.084-.716.084-.716 1.205.082 1.838 1.215 1.838 1.215 1.07 1.803 2.809 1.282 3.495.981.108-.763.417-1.282.76-1.577-2.665-.295-5.466-1.309-5.466-5.827 0-1.287.465-2.339 1.235-3.164-.135-.297-.54-1.498.105-3.121 0 0 1.005-.316 3.3 1.209.96-.262 1.98-.392 3-.397 1.02.005 2.04.135 3 .397 2.28-1.525 3.285-1.209 3.285-1.209.645 1.623.24 2.824.12 3.121.765.825 1.23 1.877 1.23 3.164 0 4.53-2.805 5.527-5.475 5.817.42.354.81 1.077.81 2.182 0 1.578-.015 2.846-.015 3.229 0 .309.21.678.825.562C20.565 21.917 24 17.495 24 12.292 24 5.78 18.627.5 12 .5z"/></svg>
   </a>
+  <div class="lang-wrap">
+    <button class="lang-btn" id="langBtn" title="切换语言 / Language" aria-label="切换语言 / Language">🌐</button>
+    <div class="lang-menu" id="langMenu" role="menu"></div>
+  </div>
   <button class="icon-btn" id="themeBtn" title="切换深浅色"></button>
 </header>
 
@@ -362,7 +387,7 @@
     </button>
     <kbd class="search-hint">/</kbd>
   </div>
-  <div class="stat" id="statBar">共 <b id="totalStat">0</b> 个 · 匹配 <b id="matchStat">0</b> 个</div>
+  <div class="stat" id="statBar"></div>
 </div>
 
 <div class="tabs" id="tabs"></div>
@@ -376,8 +401,8 @@
         <p class="cn" id="detailCn">—</p>
         <p class="en" id="detailEn">—</p>
       </div>
-      <button class="detail-fav" id="detailFav" title="收藏" aria-label="收藏"></button>
-      <button class="detail-close" id="detailClose" title="关闭详情">
+      <button class="detail-fav" id="detailFav" title="收藏" aria-label="收藏" data-i18n-title="fav" data-i18n-aria="fav"></button>
+      <button class="detail-close" id="detailClose" title="关闭详情" data-i18n-title="closeDetail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -653,6 +678,83 @@ const COUNTRY_DATA = [
 
 const REGIONS = ['亚洲', '欧洲', '北美洲', '南美洲', '非洲', '大洋洲', '南极洲'];
 
+/* ---------- 多语言（i18n） ---------- */
+// 支持的语言：代码 => 菜单显示名
+const LANGS = {
+  'zh-CN': '简体中文',
+  'zh-TW': '繁體中文',
+  'en':    'English',
+  'ja':    '日本語',
+  'ko':    '한국어',
+  'th':    'ไทย',
+  'ms':    'Melayu',
+};
+const LS_LANG = 'country-info-lang';
+
+// UI 文案字典。含 {n}/{x} 占位符的，由 t() 替换。
+const I18N = {
+  // 页头
+  title:       { 'zh-CN':'国家信息速查','zh-TW':'國家資訊速查','en':'Country Info Lookup','ja':'国情報クイック検索','ko':'국가 정보 검색','th':'ค้นหาข้อมูลประเทศ','ms':'Carian Info Negara' },
+  subtitle:    { 'zh-CN':'国家码 / 货币 / 区号 / 时区','zh-TW':'國家碼 / 貨幣 / 區號 / 時區','en':'Codes / Currency / Dial / Timezone','ja':'コード / 通貨 / 国番号 / タイムゾーン','ko':'코드 / 통화 / 국가번호 / 시간대','th':'รหัส / สกุลเงิน / รหัสโทร / เขตเวลา','ms':'Kod / Mata Wang / Kod Panggilan / Zon Waktu' },
+  githubTitle: { 'zh-CN':'查看 GitHub 源码','zh-TW':'查看 GitHub 原始碼','en':'View source on GitHub','ja':'GitHub でソースを見る','ko':'GitHub 소스 보기','th':'ดูซอร์สบน GitHub','ms':'Lihat sumber di GitHub' },
+  langTitle:   { 'zh-CN':'切换语言','zh-TW':'切換語言','en':'Language','ja':'言語','ko':'언어','th':'ภาษา','ms':'Bahasa' },
+  // 搜索框
+  searchPh:    { 'zh-CN':'搜索中文名、英文名、国家码、货币或区号（如：美国、CN、USD、+86）…','zh-TW':'搜尋中文名、英文名、國家碼、貨幣或區號（如：美國、CN、USD、+86）…','en':'Search by name, country code, currency or dial code (e.g. US, CN, USD, +86)…','ja':'国名、コード、通貨、国番号で検索（例：日本、CN、USD、+86）…','ko':'이름, 국가코드, 통화 또는 국가번호로 검색 (예: 미국, CN, USD, +86)…','th':'ค้นหาตามชื่อ รหัสประเทศ สกุลเงิน หรือรหัสโทร (เช่น สหรัฐ, CN, USD, +86)…','ms':'Cari mengikut nama, kod negara, mata wang atau kod panggilan (cth. AS, CN, USD, +86)…' },
+  clearSearch: { 'zh-CN':'清空搜索','zh-TW':'清空搜尋','en':'Clear search','ja':'検索をクリア','ko':'검색 지우기','th':'ล้างการค้นหา','ms':'Kosongkan carian' },
+  stat:        { 'zh-CN':'共 {n} 个 · 匹配 {m} 个','zh-TW':'共 {n} 個 · 符合 {m} 個','en':'{n} total · {m} matched','ja':'全 {n} 件 · 一致 {m} 件','ko':'전체 {n}개 · 일치 {m}개','th':'ทั้งหมด {n} · ตรง {m}','ms':'{n} jumlah · {m} sepadan' },
+  // 标签 / 大洲
+  all:         { 'zh-CN':'全部','zh-TW':'全部','en':'All','ja':'すべて','ko':'전체','th':'ทั้งหมด','ms':'Semua' },
+  clear:       { 'zh-CN':'清空','zh-TW':'清空','en':'Clear','ja':'クリア','ko':'비우기','th':'ล้าง','ms':'Kosongkan' },
+  favTitle:    { 'zh-CN':'⭐ 收藏','zh-TW':'⭐ 收藏','en':'⭐ Favorites','ja':'⭐ お気に入り','ko':'⭐ 즐겨찾기','th':'⭐ รายการโปรด','ms':'⭐ Kegemaran' },
+  recentTitle: { 'zh-CN':'🕘 最近使用','zh-TW':'🕘 最近使用','en':'🕘 Recent','ja':'🕘 最近使用','ko':'🕘 최근 사용','th':'🕘 ล่าสุด','ms':'🕘 Terbaru' },
+  // 空状态
+  emptyT:      { 'zh-CN':'没有匹配的国家或地区','zh-TW':'沒有符合的國家或地區','en':'No matching country or region','ja':'一致する国・地域がありません','ko':'일치하는 국가/지역이 없습니다','th':'ไม่พบประเทศหรือภูมิภาคที่ตรง','ms':'Tiada negara atau wilayah yang sepadan' },
+  emptyD:      { 'zh-CN':'试试中文名、英文名、两位国家码（CN）、货币码（USD）或电话区号（+86）。','zh-TW':'試試中文名、英文名、兩位國家碼（CN）、貨幣碼（USD）或電話區號（+86）。','en':'Try a name, 2-letter code (CN), currency code (USD) or dial code (+86).','ja':'国名、2文字コード（CN）、通貨コード（USD）、国番号（+86）をお試しください。','ko':'이름, 2자리 코드(CN), 통화 코드(USD) 또는 국가번호(+86)를 시도해 보세요.','th':'ลองชื่อ รหัส 2 ตัว(CN) รหัสสกุลเงิน(USD) หรือรหัสโทร(+86)','ms':'Cuba nama, kod 2-huruf (CN), kod mata wang (USD) atau kod panggilan (+86).' },
+  // 详情面板
+  fav:         { 'zh-CN':'收藏','zh-TW':'收藏','en':'Favorite','ja':'お気に入り','ko':'즐겨찾기','th':'ถูกใจ','ms':'Kegemaran' },
+  closeDetail: { 'zh-CN':'关闭详情','zh-TW':'關閉詳情','en':'Close details','ja':'詳細を閉じる','ko':'상세 닫기','th':'ปิดรายละเอียด','ms':'Tutup butiran' },
+  codeInfo:    { 'zh-CN':'编码信息','zh-TW':'編碼資訊','en':'Codes','ja':'コード情報','ko':'코드 정보','th':'ข้อมูลรหัส','ms':'Maklumat Kod' },
+  numCode:     { 'zh-CN':'数字码','zh-TW':'數字碼','en':'Numeric code','ja':'数字コード','ko':'숫자 코드','th':'รหัสตัวเลข','ms':'Kod Berangka' },
+  tld:         { 'zh-CN':'顶级域','zh-TW':'頂級域','en':'Top-level domain','ja':'トップレベルドメイン','ko':'최상위 도메인','th':'โดเมนระดับบนสุด','ms':'Domain Tahap Tertinggi' },
+  dialCode:    { 'zh-CN':'电话区号','zh-TW':'電話區號','en':'Dial code','ja':'国番号','ko':'국가번호','th':'รหัสโทรศัพท์','ms':'Kod Panggilan' },
+  basicInfo:   { 'zh-CN':'基本信息','zh-TW':'基本資訊','en':'Basic info','ja':'基本情報','ko':'기본 정보','th':'ข้อมูลพื้นฐาน','ms':'Maklumat Asas' },
+  official:    { 'zh-CN':'官方名','zh-TW':'官方名','en':'Official name','ja':'公式名','ko':'공식 명칭','th':'ชื่อทางการ','ms':'Nama Rasmi' },
+  capital:     { 'zh-CN':'首都','zh-TW':'首都','en':'Capital','ja':'首都','ko':'수도','th':'เมืองหลวง','ms':'Ibu Kota' },
+  region:      { 'zh-CN':'大洲','zh-TW':'大洲','en':'Region','ja':'大陸','ko':'대륙','th':'ทวีป','ms':'Wilayah' },
+  language:    { 'zh-CN':'语言','zh-TW':'語言','en':'Language','ja':'言語','ko':'언어','th':'ภาษา','ms':'Bahasa' },
+  currency:    { 'zh-CN':'货币','zh-TW':'貨幣','en':'Currency','ja':'通貨','ko':'통화','th':'สกุลเงิน','ms':'Mata Wang' },
+  curFmt:      { 'zh-CN':'格式示例：{x}','zh-TW':'格式範例：{x}','en':'Format example: {x}','ja':'書式例：{x}','ko':'서식 예: {x}','th':'ตัวอย่างรูปแบบ: {x}','ms':'Contoh format: {x}' },
+  tzTitle:     { 'zh-CN':'时区（当前时间）','zh-TW':'時區（目前時間）','en':'Time zones (current time)','ja':'タイムゾーン（現在時刻）','ko':'시간대 (현재 시간)','th':'เขตเวลา (เวลาปัจจุบัน)','ms':'Zon waktu (waktu semasa)' },
+  tzOverflow:  { 'zh-CN':'共 {n} 个时区，仅展示前 5 个','zh-TW':'共 {n} 個時區，僅顯示前 5 個','en':'{n} time zones, showing first 5','ja':'全 {n} タイムゾーン、最初の5件のみ表示','ko':'총 {n}개 시간대, 처음 5개만 표시','th':'ทั้งหมด {n} เขตเวลา แสดง 5 อันแรก','ms':'{n} zon waktu, memaparkan 5 yang pertama' },
+  // Toast
+  copyPrefix:  { 'zh-CN':'复制','zh-TW':'複製','en':'Copy','ja':'コピー','ko':'복사','th':'คัดลอก','ms':'Salin' },
+  copied:      { 'zh-CN':'已复制 {l}：{t}','zh-TW':'已複製 {l}：{t}','en':'Copied {l}: {t}','ja':'{l} をコピーしました：{t}','ko':'{l} 복사됨: {t}','th':'คัดลอก {l} แล้ว: {t}','ms':'{l} disalin: {t}' },
+  favAdd:      { 'zh-CN':'已加入收藏','zh-TW':'已加入收藏','en':'Added to favorites','ja':'お気に入りに追加しました','ko':'즐겨찾기에 추가됨','th':'เพิ่มลงรายการโปรดแล้ว','ms':'Ditambah ke kegemaran' },
+  favRemove:   { 'zh-CN':'已取消收藏','zh-TW':'已取消收藏','en':'Removed from favorites','ja':'お気に入りから削除しました','ko':'즐겨찾기에서 제거됨','th':'นำออกจากรายการโปรดแล้ว','ms':'Dikeluarkan dari kegemaran' },
+  favCleared:  { 'zh-CN':'已清空收藏','zh-TW':'已清空收藏','en':'Favorites cleared','ja':'お気に入りをクリアしました','ko':'즐겨찾기를 비웠습니다','th':'ล้างรายการโปรดแล้ว','ms':'Kegemaran dikosongkan' },
+  recentCleared:{'zh-CN':'已清空最近使用','zh-TW':'已清空最近使用','en':'Recent cleared','ja':'最近使用をクリアしました','ko':'최근 사용을 비웠습니다','th':'ล้างรายการล่าสุดแล้ว','ms':'Terbaru dikosongkan' },
+};
+
+// 大洲名多语言（key 仍为内部中文，仅显示层翻译）
+const REG_I18N = {
+  '亚洲':   { 'zh-CN':'亚洲','zh-TW':'亞洲','en':'Asia','ja':'アジア','ko':'아시아','th':'เอเชีย','ms':'Asia' },
+  '欧洲':   { 'zh-CN':'欧洲','zh-TW':'歐洲','en':'Europe','ja':'ヨーロッパ','ko':'유럽','th':'ยุโรป','ms':'Eropah' },
+  '北美洲': { 'zh-CN':'北美洲','zh-TW':'北美洲','en':'North America','ja':'北アメリカ','ko':'북아메리카','th':'อเมริกาเหนือ','ms':'Amerika Utara' },
+  '南美洲': { 'zh-CN':'南美洲','zh-TW':'南美洲','en':'South America','ja':'南アメリカ','ko':'남아메리카','th':'อเมริกาใต้','ms':'Amerika Selatan' },
+  '非洲':   { 'zh-CN':'非洲','zh-TW':'非洲','en':'Africa','ja':'アフリカ','ko':'아프리카','th':'แอฟริกา','ms':'Afrika' },
+  '大洋洲': { 'zh-CN':'大洋洲','zh-TW':'大洋洲','en':'Oceania','ja':'オセアニア','ko':'오세아니아','th':'โอเชียเนีย','ms':'Oseania' },
+  '南极洲': { 'zh-CN':'南极洲','zh-TW':'南極洲','en':'Antarctica','ja':'南極大陸','ko':'남극','th':'ทวีปแอนตาร์กติกา','ms':'Antartika' },
+};
+
+// 国家显示名（按语言）：ja/ko/th/ms 取自 Unicode CLDR common/main；zh-TW 取自 CLDR zh_Hant。缺失项由 localName() 回退 zh-CN(cn)→en。
+const COUNTRY_NAMES = {
+  "ja": {"AD":"アンドラ","AE":"アラブ首長国連邦","AF":"アフガニスタン","AG":"アンティグア・バーブーダ","AI":"アンギラ","AL":"アルバニア","AM":"アルメニア","AO":"アンゴラ","AQ":"南極","AR":"アルゼンチン","AS":"米領サモア","AT":"オーストリア","AU":"オーストラリア","AW":"アルバ","AX":"オーランド諸島","AZ":"アゼルバイジャン","BA":"ボスニア・ヘルツェゴビナ","BB":"バルバドス","BD":"バングラデシュ","BE":"ベルギー","BF":"ブルキナファソ","BG":"ブルガリア","BH":"バーレーン","BI":"ブルンジ","BJ":"ベナン","BL":"サン・バルテルミー","BM":"バミューダ","BN":"ブルネイ","BO":"ボリビア","BQ":"オランダ領カリブ","BR":"ブラジル","BS":"バハマ","BT":"ブータン","BV":"ブーベ島","BW":"ボツワナ","BY":"ベラルーシ","BZ":"ベリーズ","CA":"カナダ","CC":"ココス(キーリング)諸島","CD":"コンゴ民主共和国(キンシャサ)","CF":"中央アフリカ共和国","CG":"コンゴ共和国(ブラザビル)","CH":"スイス","CI":"コートジボワール","CK":"クック諸島","CL":"チリ","CM":"カメルーン","CN":"中国","CO":"コロンビア","CR":"コスタリカ","CU":"キューバ","CV":"カーボベルデ","CW":"キュラソー","CX":"クリスマス島","CY":"キプロス","CZ":"チェコ","DE":"ドイツ","DJ":"ジブチ","DK":"デンマーク","DM":"ドミニカ国","DO":"ドミニカ共和国","DZ":"アルジェリア","EC":"エクアドル","EE":"エストニア","EG":"エジプト","EH":"西サハラ","ER":"エリトリア","ES":"スペイン","ET":"エチオピア","FI":"フィンランド","FJ":"フィジー","FK":"フォークランド諸島","FM":"ミクロネシア連邦","FO":"フェロー諸島","FR":"フランス","GA":"ガボン","GB":"イギリス","GD":"グレナダ","GE":"ジョージア","GF":"仏領ギアナ","GG":"ガーンジー","GH":"ガーナ","GI":"ジブラルタル","GL":"グリーンランド","GM":"ガンビア","GN":"ギニア","GP":"グアドループ","GQ":"赤道ギニア","GR":"ギリシャ","GS":"サウスジョージア・サウスサンドウィッチ諸島","GT":"グアテマラ","GU":"グアム","GW":"ギニアビサウ","GY":"ガイアナ","HK":"中華人民共和国香港特別行政区","HM":"ハード島・マクドナルド諸島","HN":"ホンジュラス","HR":"クロアチア","HT":"ハイチ","HU":"ハンガリー","ID":"インドネシア","IE":"アイルランド","IL":"イスラエル","IM":"マン島","IN":"インド","IO":"英領インド洋地域","IQ":"イラク","IR":"イラン","IS":"アイスランド","IT":"イタリア","JE":"ジャージー","JM":"ジャマイカ","JO":"ヨルダン","JP":"日本","KE":"ケニア","KG":"キルギス","KH":"カンボジア","KI":"キリバス","KM":"コモロ","KN":"セントクリストファー・ネーヴィス","KP":"北朝鮮","KR":"韓国","KW":"クウェート","KY":"ケイマン諸島","KZ":"カザフスタン","LA":"ラオス","LB":"レバノン","LC":"セントルシア","LI":"リヒテンシュタイン","LK":"スリランカ","LR":"リベリア","LS":"レソト","LT":"リトアニア","LU":"ルクセンブルク","LV":"ラトビア","LY":"リビア","MA":"モロッコ","MC":"モナコ","MD":"モルドバ","ME":"モンテネグロ","MF":"サン・マルタン","MG":"マダガスカル","MH":"マーシャル諸島","MK":"北マケドニア","ML":"マリ","MM":"ミャンマー (ビルマ)","MN":"モンゴル","MO":"中華人民共和国マカオ特別行政区","MP":"北マリアナ諸島","MQ":"マルティニーク","MR":"モーリタニア","MS":"モントセラト","MT":"マルタ","MU":"モーリシャス","MV":"モルディブ","MW":"マラウイ","MX":"メキシコ","MY":"マレーシア","MZ":"モザンビーク","NA":"ナミビア","NC":"ニューカレドニア","NE":"ニジェール","NF":"ノーフォーク島","NG":"ナイジェリア","NI":"ニカラグア","NL":"オランダ","NO":"ノルウェー","NP":"ネパール","NR":"ナウル","NU":"ニウエ","NZ":"ニュージーランド","OM":"オマーン","PA":"パナマ","PE":"ペルー","PF":"仏領ポリネシア","PG":"パプアニューギニア","PH":"フィリピン","PK":"パキスタン","PL":"ポーランド","PM":"サンピエール島・ミクロン島","PN":"ピトケアン諸島","PR":"プエルトリコ","PS":"パレスチナ自治区","PT":"ポルトガル","PW":"パラオ","PY":"パラグアイ","QA":"カタール","RE":"レユニオン","RO":"ルーマニア","RS":"セルビア","RU":"ロシア","RW":"ルワンダ","SA":"サウジアラビア","SB":"ソロモン諸島","SC":"セーシェル","SD":"スーダン","SE":"スウェーデン","SG":"シンガポール","SH":"セントヘレナ","SI":"スロベニア","SJ":"スバールバル諸島・ヤンマイエン島","SK":"スロバキア","SL":"シエラレオネ","SM":"サンマリノ","SN":"セネガル","SO":"ソマリア","SR":"スリナム","SS":"南スーダン","ST":"サントメ・プリンシペ","SV":"エルサルバドル","SX":"シント・マールテン","SY":"シリア","SZ":"エスワティニ","TC":"タークス・カイコス諸島","TD":"チャド","TF":"仏領極南諸島","TG":"トーゴ","TH":"タイ","TJ":"タジキスタン","TK":"トケラウ","TL":"東ティモール","TM":"トルクメニスタン","TN":"チュニジア","TO":"トンガ","TR":"トルコ","TT":"トリニダード・トバゴ","TV":"ツバル","TW":"台湾","TZ":"タンザニア","UA":"ウクライナ","UG":"ウガンダ","UM":"合衆国領有小離島","US":"アメリカ合衆国","UY":"ウルグアイ","UZ":"ウズベキスタン","VA":"バチカン市国","VC":"セントビンセント及びグレナディーン諸島","VE":"ベネズエラ","VG":"英領ヴァージン諸島","VI":"米領ヴァージン諸島","VN":"ベトナム","VU":"バヌアツ","WF":"ウォリス・フツナ","WS":"サモア","XK":"コソボ","YE":"イエメン","YT":"マヨット","ZA":"南アフリカ","ZM":"ザンビア","ZW":"ジンバブエ"},
+  "ko": {"AD":"안도라","AE":"아랍에미리트","AF":"아프가니스탄","AG":"앤티가 바부다","AI":"앵귈라","AL":"알바니아","AM":"아르메니아","AO":"앙골라","AQ":"남극 대륙","AR":"아르헨티나","AS":"아메리칸 사모아","AT":"오스트리아","AU":"오스트레일리아","AW":"아루바","AX":"올란드 제도","AZ":"아제르바이잔","BA":"보스니아 헤르체고비나","BB":"바베이도스","BD":"방글라데시","BE":"벨기에","BF":"부르키나파소","BG":"불가리아","BH":"바레인","BI":"부룬디","BJ":"베냉","BL":"생바르텔레미","BM":"버뮤다","BN":"브루나이","BO":"볼리비아","BQ":"네덜란드령 카리브","BR":"브라질","BS":"바하마","BT":"부탄","BV":"부베섬","BW":"보츠와나","BY":"벨라루스","BZ":"벨리즈","CA":"캐나다","CC":"코코스 제도","CD":"콩고-킨샤사","CF":"중앙 아프리카 공화국","CG":"콩고-브라자빌","CH":"스위스","CI":"코트디부아르","CK":"쿡 제도","CL":"칠레","CM":"카메룬","CN":"중국","CO":"콜롬비아","CR":"코스타리카","CU":"쿠바","CV":"카보베르데","CW":"퀴라소","CX":"크리스마스섬","CY":"키프로스","CZ":"체코","DE":"독일","DJ":"지부티","DK":"덴마크","DM":"도미니카","DO":"도미니카 공화국","DZ":"알제리","EC":"에콰도르","EE":"에스토니아","EG":"이집트","EH":"서사하라","ER":"에리트리아","ES":"스페인","ET":"에티오피아","FI":"핀란드","FJ":"피지","FK":"포클랜드 제도","FM":"미크로네시아","FO":"페로 제도","FR":"프랑스","GA":"가봉","GB":"영국","GD":"그레나다","GE":"조지아","GF":"프랑스령 기아나","GG":"건지","GH":"가나","GI":"지브롤터","GL":"그린란드","GM":"감비아","GN":"기니","GP":"과들루프","GQ":"적도 기니","GR":"그리스","GS":"사우스조지아 사우스샌드위치 제도","GT":"과테말라","GU":"괌","GW":"기니비사우","GY":"가이아나","HK":"홍콩(중국 특별행정구)","HM":"허드 맥도널드 제도","HN":"온두라스","HR":"크로아티아","HT":"아이티","HU":"헝가리","ID":"인도네시아","IE":"아일랜드","IL":"이스라엘","IM":"맨섬","IN":"인도","IO":"영국령 인도양 지역","IQ":"이라크","IR":"이란","IS":"아이슬란드","IT":"이탈리아","JE":"저지","JM":"자메이카","JO":"요르단","JP":"일본","KE":"케냐","KG":"키르기스스탄","KH":"캄보디아","KI":"키리바시","KM":"코모로","KN":"세인트키츠 네비스","KP":"북한","KR":"대한민국","KW":"쿠웨이트","KY":"케이맨 제도","KZ":"카자흐스탄","LA":"라오스","LB":"레바논","LC":"세인트루시아","LI":"리히텐슈타인","LK":"스리랑카","LR":"라이베리아","LS":"레소토","LT":"리투아니아","LU":"룩셈부르크","LV":"라트비아","LY":"리비아","MA":"모로코","MC":"모나코","MD":"몰도바","ME":"몬테네그로","MF":"생마르탱","MG":"마다가스카르","MH":"마셜 제도","MK":"북마케도니아","ML":"말리","MM":"미얀마","MN":"몽골","MO":"마카오(중국 특별행정구)","MP":"북마리아나제도","MQ":"마르티니크","MR":"모리타니","MS":"몬트세라트","MT":"몰타","MU":"모리셔스","MV":"몰디브","MW":"말라위","MX":"멕시코","MY":"말레이시아","MZ":"모잠비크","NA":"나미비아","NC":"뉴칼레도니아","NE":"니제르","NF":"노퍽섬","NG":"나이지리아","NI":"니카라과","NL":"네덜란드","NO":"노르웨이","NP":"네팔","NR":"나우루","NU":"니우에","NZ":"뉴질랜드","OM":"오만","PA":"파나마","PE":"페루","PF":"프랑스령 폴리네시아","PG":"파푸아뉴기니","PH":"필리핀","PK":"파키스탄","PL":"폴란드","PM":"생피에르 미클롱","PN":"핏케언 제도","PR":"푸에르토리코","PS":"팔레스타인 지구","PT":"포르투갈","PW":"팔라우","PY":"파라과이","QA":"카타르","RE":"레위니옹","RO":"루마니아","RS":"세르비아","RU":"러시아","RW":"르완다","SA":"사우디아라비아","SB":"솔로몬 제도","SC":"세이셸","SD":"수단","SE":"스웨덴","SG":"싱가포르","SH":"세인트헬레나","SI":"슬로베니아","SJ":"스발바르제도-얀마웬섬","SK":"슬로바키아","SL":"시에라리온","SM":"산마리노","SN":"세네갈","SO":"소말리아","SR":"수리남","SS":"남수단","ST":"상투메 프린시페","SV":"엘살바도르","SX":"신트마르턴","SY":"시리아","SZ":"에스와티니","TC":"터크스 케이커스 제도","TD":"차드","TF":"프랑스령 남방 지역","TG":"토고","TH":"태국","TJ":"타지키스탄","TK":"토켈라우","TL":"동티모르","TM":"투르크메니스탄","TN":"튀니지","TO":"통가","TR":"튀르키예","TT":"트리니다드 토바고","TV":"투발루","TW":"대만","TZ":"탄자니아","UA":"우크라이나","UG":"우간다","UM":"미국령 해외 제도","US":"미국","UY":"우루과이","UZ":"우즈베키스탄","VA":"바티칸 시국","VC":"세인트빈센트그레나딘","VE":"베네수엘라","VG":"영국령 버진아일랜드","VI":"미국령 버진아일랜드","VN":"베트남","VU":"바누아투","WF":"왈리스-푸투나 제도","WS":"사모아","XK":"코소보","YE":"예멘","YT":"마요트","ZA":"남아프리카","ZM":"잠비아","ZW":"짐바브웨"},
+  "th": {"AD":"อันดอร์รา","AE":"สหรัฐอาหรับเอมิเรตส์","AF":"อัฟกานิสถาน","AG":"แอนติกาและบาร์บูดา","AI":"แองกวิลลา","AL":"แอลเบเนีย","AM":"อาร์เมเนีย","AO":"แองโกลา","AQ":"แอนตาร์กติกา","AR":"อาร์เจนตินา","AS":"อเมริกันซามัว","AT":"ออสเตรีย","AU":"ออสเตรเลีย","AW":"อารูบา","AX":"หมู่เกาะโอลันด์","AZ":"อาเซอร์ไบจาน","BA":"บอสเนียและเฮอร์เซโกวีนา","BB":"บาร์เบโดส","BD":"บังกลาเทศ","BE":"เบลเยียม","BF":"บูร์กินาฟาโซ","BG":"บัลแกเรีย","BH":"บาห์เรน","BI":"บุรุนดี","BJ":"เบนิน","BL":"เซนต์บาร์เธเลมี","BM":"เบอร์มิวดา","BN":"บรูไน","BO":"โบลิเวีย","BQ":"เนเธอร์แลนด์แคริบเบียน","BR":"บราซิล","BS":"บาฮามาส","BT":"ภูฏาน","BV":"เกาะบูเว","BW":"บอตสวานา","BY":"เบลารุส","BZ":"เบลีซ","CA":"แคนาดา","CC":"หมู่เกาะโคโคส (คีลิง)","CD":"คองโก - กินชาซา","CF":"สาธารณรัฐแอฟริกากลาง","CG":"คองโก - บราซซาวิล","CH":"สวิตเซอร์แลนด์","CI":"โกตดิวัวร์","CK":"หมู่เกาะคุก","CL":"ชิลี","CM":"แคเมอรูน","CN":"จีน","CO":"โคลอมเบีย","CR":"คอสตาริกา","CU":"คิวบา","CV":"เคปเวิร์ด","CW":"คูราเซา","CX":"เกาะคริสต์มาส","CY":"ไซปรัส","CZ":"เช็ก","DE":"เยอรมนี","DJ":"จิบูตี","DK":"เดนมาร์ก","DM":"โดมินิกา","DO":"สาธารณรัฐโดมินิกัน","DZ":"แอลจีเรีย","EC":"เอกวาดอร์","EE":"เอสโตเนีย","EG":"อียิปต์","EH":"ซาฮาราตะวันตก","ER":"เอริเทรีย","ES":"สเปน","ET":"เอธิโอเปีย","FI":"ฟินแลนด์","FJ":"ฟิจิ","FK":"หมู่เกาะฟอล์กแลนด์","FM":"ไมโครนีเซีย","FO":"หมู่เกาะแฟโร","FR":"ฝรั่งเศส","GA":"กาบอง","GB":"สหราชอาณาจักร","GD":"เกรเนดา","GE":"จอร์เจีย","GF":"เฟรนช์เกียนา","GG":"เกิร์นซีย์","GH":"กานา","GI":"ยิบรอลตาร์","GL":"กรีนแลนด์","GM":"แกมเบีย","GN":"กินี","GP":"กวาเดอลูป","GQ":"อิเควทอเรียลกินี","GR":"กรีซ","GS":"เกาะเซาท์จอร์เจียและหมู่เกาะเซาท์แซนด์วิช","GT":"กัวเตมาลา","GU":"กวม","GW":"กินี-บิสเซา","GY":"กายอานา","HK":"เขตปกครองพิเศษฮ่องกงแห่งสาธารณรัฐประชาชนจีน","HM":"เกาะเฮิร์ดและหมู่เกาะแมกดอนัลด์","HN":"ฮอนดูรัส","HR":"โครเอเชีย","HT":"เฮติ","HU":"ฮังการี","ID":"อินโดนีเซีย","IE":"ไอร์แลนด์","IL":"อิสราเอล","IM":"เกาะแมน","IN":"อินเดีย","IO":"บริติชอินเดียนโอเชียนเทร์ริทอรี","IQ":"อิรัก","IR":"อิหร่าน","IS":"ไอซ์แลนด์","IT":"อิตาลี","JE":"เจอร์ซีย์","JM":"จาเมกา","JO":"จอร์แดน","JP":"ญี่ปุ่น","KE":"เคนยา","KG":"คีร์กีซสถาน","KH":"กัมพูชา","KI":"คิริบาส","KM":"คอโมโรส","KN":"เซนต์คิตส์และเนวิส","KP":"เกาหลีเหนือ","KR":"เกาหลีใต้","KW":"คูเวต","KY":"หมู่เกาะเคย์แมน","KZ":"คาซัคสถาน","LA":"ลาว","LB":"เลบานอน","LC":"เซนต์ลูเซีย","LI":"ลิกเตนสไตน์","LK":"ศรีลังกา","LR":"ไลบีเรีย","LS":"เลโซโท","LT":"ลิทัวเนีย","LU":"ลักเซมเบิร์ก","LV":"ลัตเวีย","LY":"ลิเบีย","MA":"โมร็อกโก","MC":"โมนาโก","MD":"มอลโดวา","ME":"มอนเตเนโกร","MF":"เซนต์มาร์ติน","MG":"มาดากัสการ์","MH":"หมู่เกาะมาร์แชลล์","MK":"มาซิโดเนียเหนือ","ML":"มาลี","MM":"เมียนมา (พม่า)","MN":"มองโกเลีย","MO":"เขตปกครองพิเศษมาเก๊าแห่งสาธารณรัฐประชาชนจีน","MP":"หมู่เกาะนอร์เทิร์นมาเรียนา","MQ":"มาร์ตินีก","MR":"มอริเตเนีย","MS":"มอนต์เซอร์รัต","MT":"มอลตา","MU":"มอริเชียส","MV":"มัลดีฟส์","MW":"มาลาวี","MX":"เม็กซิโก","MY":"มาเลเซีย","MZ":"โมซัมบิก","NA":"นามิเบีย","NC":"นิวแคลิโดเนีย","NE":"ไนเจอร์","NF":"เกาะนอร์ฟอล์ก","NG":"ไนจีเรีย","NI":"นิการากัว","NL":"เนเธอร์แลนด์","NO":"นอร์เวย์","NP":"เนปาล","NR":"นาอูรู","NU":"นีอูเอ","NZ":"นิวซีแลนด์","OM":"โอมาน","PA":"ปานามา","PE":"เปรู","PF":"เฟรนช์โปลินีเซีย","PG":"ปาปัวนิวกินี","PH":"ฟิลิปปินส์","PK":"ปากีสถาน","PL":"โปแลนด์","PM":"แซงปีแยร์และมีเกอลง","PN":"หมู่เกาะพิตแคร์น","PR":"เปอร์โตริโก","PS":"ดินแดนปาเลสไตน์","PT":"โปรตุเกส","PW":"ปาเลา","PY":"ปารากวัย","QA":"กาตาร์","RE":"เรอูนียง","RO":"โรมาเนีย","RS":"เซอร์เบีย","RU":"รัสเซีย","RW":"รวันดา","SA":"ซาอุดีอาระเบีย","SB":"หมู่เกาะโซโลมอน","SC":"เซเชลส์","SD":"ซูดาน","SE":"สวีเดน","SG":"สิงคโปร์","SH":"เซนต์เฮเลนา","SI":"สโลวีเนีย","SJ":"สฟาลบาร์และยานไมเอน","SK":"สโลวะเกีย","SL":"เซียร์ราลีโอน","SM":"ซานมาริโน","SN":"เซเนกัล","SO":"โซมาเลีย","SR":"ซูรินาเม","SS":"ซูดานใต้","ST":"เซาตูเมและปรินซิปี","SV":"เอลซัลวาดอร์","SX":"ซินต์มาร์เทน","SY":"ซีเรีย","SZ":"เอสวาตีนี","TC":"หมู่เกาะเติกส์และหมู่เกาะเคคอส","TD":"ชาด","TF":"เฟรนช์เซาเทิร์นเทร์ริทอรีส์","TG":"โตโก","TH":"ไทย","TJ":"ทาจิกิสถาน","TK":"โตเกเลา","TL":"ติมอร์-เลสเต","TM":"เติร์กเมนิสถาน","TN":"ตูนิเซีย","TO":"ตองกา","TR":"ตุรกี","TT":"ตรินิแดดและโตเบโก","TV":"ตูวาลู","TW":"ไต้หวัน","TZ":"แทนซาเนีย","UA":"ยูเครน","UG":"ยูกันดา","UM":"หมู่เกาะรอบนอกของสหรัฐอเมริกา","US":"สหรัฐอเมริกา","UY":"อุรุกวัย","UZ":"อุซเบกิสถาน","VA":"นครวาติกัน","VC":"เซนต์วินเซนต์และเกรนาดีนส์","VE":"เวเนซุเอลา","VG":"หมู่เกาะบริติชเวอร์จิน","VI":"หมู่เกาะเวอร์จินของสหรัฐอเมริกา","VN":"เวียดนาม","VU":"วานูอาตู","WF":"วาลลิสและฟุตูนา","WS":"ซามัว","XK":"โคโซโว","YE":"เยเมน","YT":"มายอต","ZA":"แอฟริกาใต้","ZM":"แซมเบีย","ZW":"ซิมบับเว"},
+  "ms": {"AD":"Andorra","AE":"Emiriah Arab Bersatu","AF":"Afghanistan","AG":"Antigua dan Barbuda","AI":"Anguilla","AL":"Albania","AM":"Armenia","AO":"Angola","AQ":"Antartika","AR":"Argentina","AS":"Samoa Amerika","AT":"Austria","AU":"Australia","AW":"Aruba","AX":"Kepulauan Aland","AZ":"Azerbaijan","BA":"Bosnia dan Herzegovina","BB":"Barbados","BD":"Bangladesh","BE":"Belgium","BF":"Burkina Faso","BG":"Bulgaria","BH":"Bahrain","BI":"Burundi","BJ":"Benin","BL":"St. Barthelemy","BM":"Bermuda","BN":"Brunei","BO":"Bolivia","BQ":"Belanda Caribbean","BR":"Brazil","BS":"Bahamas","BT":"Bhutan","BV":"Pulau Bouvet","BW":"Botswana","BY":"Belarus","BZ":"Belize","CA":"Kanada","CC":"Kepulauan Cocos (Keeling)","CD":"Congo - Kinshasa","CF":"Republik Afrika Tengah","CG":"Congo - Brazzaville","CH":"Switzerland","CI":"Cote d’Ivoire","CK":"Kepulauan Cook","CL":"Chile","CM":"Cameroon","CN":"China","CO":"Colombia","CR":"Costa Rica","CU":"Cuba","CV":"Cape Verde","CW":"Curacao","CX":"Pulau Krismas","CY":"Cyprus","CZ":"Czechia","DE":"Jerman","DJ":"Djibouti","DK":"Denmark","DM":"Dominica","DO":"Republik Dominica","DZ":"Algeria","EC":"Ecuador","EE":"Estonia","EG":"Mesir","EH":"Sahara Barat","ER":"Eritrea","ES":"Sepanyol","ET":"Ethiopia","FI":"Finland","FJ":"Fiji","FK":"Kepulauan Falkland","FM":"Micronesia","FO":"Kepulauan Faroe","FR":"Perancis","GA":"Gabon","GB":"United Kingdom","GD":"Grenada","GE":"Georgia","GF":"Guiana Perancis","GG":"Guernsey","GH":"Ghana","GI":"Gibraltar","GL":"Greenland","GM":"Gambia","GN":"Guinea","GP":"Guadeloupe","GQ":"Guinea Khatulistiwa","GR":"Greece","GS":"Kepulauan Georgia Selatan & Sandwich Selatan","GT":"Guatemala","GU":"Guam","GW":"Guinea Bissau","GY":"Guyana","HK":"Hong Kong SAR China","HM":"Kepulauan Heard & McDonald","HN":"Honduras","HR":"Croatia","HT":"Haiti","HU":"Hungary","ID":"Indonesia","IE":"Ireland","IL":"Israel","IM":"Isle of Man","IN":"India","IO":"Wilayah Lautan Hindi British","IQ":"Iraq","IR":"Iran","IS":"Iceland","IT":"Itali","JE":"Jersey","JM":"Jamaica","JO":"Jordan","JP":"Jepun","KE":"Kenya","KG":"Kyrgyzstan","KH":"Kemboja","KI":"Kiribati","KM":"Comoros","KN":"Saint Kitts dan Nevis","KP":"Korea Utara","KR":"Korea Selatan","KW":"Kuwait","KY":"Kepulauan Cayman","KZ":"Kazakhstan","LA":"Laos","LB":"Lubnan","LC":"Saint Lucia","LI":"Liechtenstein","LK":"Sri Lanka","LR":"Liberia","LS":"Lesotho","LT":"Lithuania","LU":"Luxembourg","LV":"Latvia","LY":"Libya","MA":"Maghribi","MC":"Monaco","MD":"Moldova","ME":"Montenegro","MF":"Saint Martin","MG":"Madagaskar","MH":"Kepulauan Marshall","MK":"Macedonia Utara","ML":"Mali","MM":"Myanmar (Burma)","MN":"Mongolia","MO":"Macau SAR China","MP":"Kepulauan Mariana Utara","MQ":"Martinique","MR":"Mauritania","MS":"Montserrat","MT":"Malta","MU":"Mauritius","MV":"Maldives","MW":"Malawi","MX":"Mexico","MY":"Malaysia","MZ":"Mozambique","NA":"Namibia","NC":"New Caledonia","NE":"Niger","NF":"Pulau Norfolk","NG":"Nigeria","NI":"Nicaragua","NL":"Belanda","NO":"Norway","NP":"Nepal","NR":"Nauru","NU":"Niue","NZ":"New Zealand","OM":"Oman","PA":"Panama","PE":"Peru","PF":"Polinesia Perancis","PG":"Papua New Guinea","PH":"Filipina","PK":"Pakistan","PL":"Poland","PM":"Saint Pierre dan Miquelon","PN":"Kepulauan Pitcairn","PR":"Puerto Rico","PS":"Wilayah Palestin","PT":"Portugal","PW":"Palau","PY":"Paraguay","QA":"Qatar","RE":"Reunion","RO":"Romania","RS":"Serbia","RU":"Rusia","RW":"Rwanda","SA":"Arab Saudi","SB":"Kepulauan Solomon","SC":"Seychelles","SD":"Sudan","SE":"Sweden","SG":"Singapura","SH":"Saint Helena","SI":"Slovenia","SJ":"Svalbard dan Jan Mayen","SK":"Slovakia","SL":"Sierra Leone","SM":"San Marino","SN":"Senegal","SO":"Somalia","SR":"Surinam","SS":"Sudan Selatan","ST":"Sao Tome dan Principe","SV":"El Salvador","SX":"Sint Maarten","SY":"Syria","SZ":"Eswatini","TC":"Kepulauan Turks dan Caicos","TD":"Chad","TF":"Wilayah Selatan Perancis","TG":"Togo","TH":"Thailand","TJ":"Tajikistan","TK":"Tokelau","TL":"Timor-Leste","TM":"Turkmenistan","TN":"Tunisia","TO":"Tonga","TR":"Turkiye","TT":"Trinidad dan Tobago","TV":"Tuvalu","TW":"Taiwan","TZ":"Tanzania","UA":"Ukraine","UG":"Uganda","UM":"Kepulauan Terpencil A.S.","US":"Amerika Syarikat","UY":"Uruguay","UZ":"Uzbekistan","VA":"Kota Vatican","VC":"Saint Vincent dan Grenadines","VE":"Venezuela","VG":"Kepulauan Virgin British","VI":"Kepulauan Virgin A.S.","VN":"Vietnam","VU":"Vanuatu","WF":"Wallis dan Futuna","WS":"Samoa","XK":"Kosovo","YE":"Yaman","YT":"Mayotte","ZA":"Afrika Selatan","ZM":"Zambia","ZW":"Zimbabwe"},
+  "zh-TW": {"AD":"安道爾","AE":"阿拉伯聯合大公國","AF":"阿富汗","AG":"安地卡及巴布達","AI":"安奎拉","AL":"阿爾巴尼亞","AM":"亞美尼亞","AO":"安哥拉","AQ":"南極洲","AR":"阿根廷","AS":"美屬薩摩亞","AT":"奧地利","AU":"澳洲","AW":"荷屬阿魯巴","AX":"奧蘭群島","AZ":"亞塞拜然","BA":"波士尼亞與赫塞哥維納","BB":"巴貝多","BD":"孟加拉","BE":"比利時","BF":"布吉納法索","BG":"保加利亞","BH":"巴林","BI":"蒲隆地","BJ":"貝南","BL":"聖巴瑟米","BM":"百慕達","BN":"汶萊","BO":"玻利維亞","BQ":"荷蘭加勒比區","BR":"巴西","BS":"巴哈馬","BT":"不丹","BV":"布威島","BW":"波札那","BY":"白俄羅斯","BZ":"貝里斯","CA":"加拿大","CC":"科克斯（基靈）群島","CD":"剛果（金夏沙）","CF":"中非共和國","CG":"剛果（布拉薩）","CH":"瑞士","CI":"象牙海岸","CK":"庫克群島","CL":"智利","CM":"喀麥隆","CN":"中國","CO":"哥倫比亞","CR":"哥斯大黎加","CU":"古巴","CV":"維德角","CW":"庫拉索","CX":"聖誕島","CY":"賽普勒斯","CZ":"捷克","DE":"德國","DJ":"吉布地","DK":"丹麥","DM":"多米尼克","DO":"多明尼加共和國","DZ":"阿爾及利亞","EC":"厄瓜多","EE":"愛沙尼亞","EG":"埃及","EH":"西撒哈拉","ER":"厄利垂亞","ES":"西班牙","ET":"衣索比亞","FI":"芬蘭","FJ":"斐濟","FK":"福克蘭群島","FM":"密克羅尼西亞","FO":"法羅群島","FR":"法國","GA":"加彭","GB":"英國","GD":"格瑞那達","GE":"喬治亞","GF":"法屬圭亞那","GG":"根息","GH":"迦納","GI":"直布羅陀","GL":"格陵蘭","GM":"甘比亞","GN":"幾內亞","GP":"瓜地洛普","GQ":"赤道幾內亞","GR":"希臘","GS":"南喬治亞與南三明治群島","GT":"瓜地馬拉","GU":"關島","GW":"幾內亞比索","GY":"蓋亞那","HK":"中國香港特別行政區","HM":"赫德島及麥唐納群島","HN":"宏都拉斯","HR":"克羅埃西亞","HT":"海地","HU":"匈牙利","ID":"印尼","IE":"愛爾蘭","IL":"以色列","IM":"曼島","IN":"印度","IO":"英屬印度洋領地","IQ":"伊拉克","IR":"伊朗","IS":"冰島","IT":"義大利","JE":"澤西島","JM":"牙買加","JO":"約旦","JP":"日本","KE":"肯亞","KG":"吉爾吉斯","KH":"柬埔寨","KI":"吉里巴斯","KM":"葛摩","KN":"聖克里斯多福及尼維斯","KP":"北韓","KR":"南韓","KW":"科威特","KY":"開曼群島","KZ":"哈薩克","LA":"寮國","LB":"黎巴嫩","LC":"聖露西亞","LI":"列支敦斯登","LK":"斯里蘭卡","LR":"賴比瑞亞","LS":"賴索托","LT":"立陶宛","LU":"盧森堡","LV":"拉脫維亞","LY":"利比亞","MA":"摩洛哥","MC":"摩納哥","MD":"摩爾多瓦","ME":"蒙特內哥羅","MF":"法屬聖馬丁","MG":"馬達加斯加","MH":"馬紹爾群島","MK":"北馬其頓","ML":"馬利","MM":"緬甸","MN":"蒙古","MO":"中國澳門特別行政區","MP":"北馬利安納群島","MQ":"馬丁尼克","MR":"茅利塔尼亞","MS":"蒙哲臘","MT":"馬爾他","MU":"模里西斯","MV":"馬爾地夫","MW":"馬拉威","MX":"墨西哥","MY":"馬來西亞","MZ":"莫三比克","NA":"納米比亞","NC":"新喀里多尼亞","NE":"尼日","NF":"諾福克島","NG":"奈及利亞","NI":"尼加拉瓜","NL":"荷蘭","NO":"挪威","NP":"尼泊爾","NR":"諾魯","NU":"紐埃島","NZ":"紐西蘭","OM":"阿曼","PA":"巴拿馬","PE":"秘魯","PF":"法屬玻里尼西亞","PG":"巴布亞紐幾內亞","PH":"菲律賓","PK":"巴基斯坦","PL":"波蘭","PM":"聖皮埃與密克隆群島","PN":"皮特肯群島","PR":"波多黎各","PS":"巴勒斯坦自治區","PT":"葡萄牙","PW":"帛琉","PY":"巴拉圭","QA":"卡達","RE":"留尼旺","RO":"羅馬尼亞","RS":"塞爾維亞","RU":"俄羅斯","RW":"盧安達","SA":"沙烏地阿拉伯","SB":"索羅門群島","SC":"塞席爾","SD":"蘇丹","SE":"瑞典","SG":"新加坡","SH":"聖赫勒拿島","SI":"斯洛維尼亞","SJ":"挪威屬斯瓦巴及尖棉","SK":"斯洛伐克","SL":"獅子山","SM":"聖馬利諾","SN":"塞內加爾","SO":"索馬利亞","SR":"蘇利南","SS":"南蘇丹","ST":"聖多美普林西比","SV":"薩爾瓦多","SX":"荷屬聖馬丁","SY":"敘利亞","SZ":"史瓦帝尼","TC":"土克斯及開科斯群島","TD":"查德","TF":"法屬南部屬地","TG":"多哥","TH":"泰國","TJ":"塔吉克","TK":"托克勞群島","TL":"東帝汶","TM":"土庫曼","TN":"突尼西亞","TO":"東加","TR":"土耳其","TT":"千里達及托巴哥","TV":"吐瓦魯","TW":"台灣","TZ":"坦尚尼亞","UA":"烏克蘭","UG":"烏干達","UM":"美國本土外小島嶼","US":"美國","UY":"烏拉圭","UZ":"烏茲別克","VA":"梵蒂岡","VC":"聖文森及格瑞那丁","VE":"委內瑞拉","VG":"英屬維京群島","VI":"美屬維京群島","VN":"越南","VU":"萬那杜","WF":"瓦利斯群島和富圖那群島","WS":"薩摩亞","XK":"科索沃","YE":"葉門","YT":"馬約特島","ZA":"南非","ZM":"尚比亞","ZW":"辛巴威"},
+};
+
 /* ---------- 状态 ---------- */
 const LS_FAV = 'country-info-favs';
 const LS_RECENT = 'country-info-recent';
@@ -665,6 +767,7 @@ let activeTab = '全部';
 let query = '';
 let selectedA2 = null;
 let tzTimer = null;
+let lang = 'zh-CN';  // 当前界面语言
 
 function readLS(key, fallback) {
   try {
@@ -682,6 +785,36 @@ const mainEl = $('main'), tabsEl = $('tabs');
 const searchInput = $('searchInput'), clearSearchBtn = $('clearSearch');
 const detailEl = $('detail'), detailBody = $('detailBody');
 
+/* ---------- i18n 核心 ---------- */
+// 取当前语言文案。key 为 I18N 的键；vars 为占位替换对象。
+function t(key, vars) {
+  const dict = I18N[key];
+  let s = (dict && dict[lang]) || (dict && dict['en']) || (dict && dict['zh-CN']) || key;
+  if (vars) for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+// 取国家显示名（回退：当前语言映射 -> zh-CN cn -> en）
+function localName(c) {
+  if (lang === 'en') return c.en || c.cn;
+  const map = COUNTRY_NAMES[lang];
+  if (map && map[c.a2]) return map[c.a2];
+  if (lang === 'zh-CN' || lang === 'zh-TW') return c.cn || c.en;
+  return c.en || c.cn;
+}
+// 取大洲显示名（key 为内部中文大洲名）
+function localReg(reg) {
+  const m = REG_I18N[reg];
+  return (m && m[lang]) || (m && m['en']) || reg;
+}
+// 取 tab 显示名：全部走 t()，大洲走 localReg()
+function localTabLabel(key) {
+  return key === '全部' ? t('all') : localReg(key);
+}
+// Intl 用的 locale（时间/货币格式化）
+function intlLocale() {
+  return lang === 'zh-TW' ? 'zh-Hant' : lang;
+}
+
 /* ---------- 图标 ---------- */
 const SVG_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -692,8 +825,13 @@ const SVG_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 /* ---------- 搜索 ---------- */
 function matchCountry(c, q) {
   const ql = q.toLowerCase();
+  // 中文名/官方名（简繁中文搜索）
   if (c.cn.includes(q) || c.off.includes(q)) return true;
+  // 英文名（所有语言始终支持）
   if (c.en.toLowerCase().includes(ql)) return true;
+  // 当前语言的本地化名（ja/ko/th/ms/zh-TW）
+  const map = COUNTRY_NAMES[lang];
+  if (map && map[c.a2] && map[c.a2].toLowerCase().includes(ql)) return true;
   if (c.a2.toLowerCase() === ql || c.a3.toLowerCase() === ql) return true;
   if (c.n3 === ql) return true;
   if (c.tel && (c.tel === q || c.tel.replace('+', '') === ql.replace('+', ''))) return true;
@@ -714,7 +852,7 @@ function renderTabs() {
   for (const name of ['全部', ...REGIONS]) {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (name === activeTab ? ' active' : '');
-    btn.textContent = name;
+    btn.textContent = localTabLabel(name);
     btn.addEventListener('click', () => {
       activeTab = name;
       renderTabs();
@@ -728,7 +866,7 @@ function renderTabs() {
 function starBtn(a2) {
   const b = document.createElement('button');
   b.className = 'fav-star' + (favs.has(a2) ? ' on' : '');
-  b.title = '收藏';
+  b.title = t('fav');
   b.innerHTML = SVG_STAR; // 静态常量，非用户输入
   b.addEventListener('click', e => {
     e.stopPropagation();
@@ -748,7 +886,7 @@ function countryCard(c) {
 
   const name = document.createElement('div');
   name.className = 'name';
-  name.textContent = c.cn;
+  name.textContent = localName(c);
 
   const code = document.createElement('div');
   code.className = 'code';
@@ -760,7 +898,7 @@ function countryCard(c) {
   card.appendChild(code);
 
   card.addEventListener('click', () => selectCountry(c.a2));
-  card.addEventListener('mouseenter', e => showTooltip(e.currentTarget, `${c.cn} · ${c.en}`));
+  card.addEventListener('mouseenter', e => showTooltip(e.currentTarget, `${localName(c)} · ${c.en}`));
   card.addEventListener('mouseleave', hideTooltip);
   return card;
 }
@@ -771,17 +909,17 @@ function sectionEl(title, list, opts = {}) {
 
   const h = document.createElement('h2');
   h.className = 'reg-title';
-  const t = document.createElement('span');
-  t.textContent = title;
+  const titleSpan = document.createElement('span');
+  titleSpan.textContent = title;
   const cnt = document.createElement('span');
   cnt.className = 'count';
   cnt.textContent = list.length;
-  h.appendChild(t);
+  h.appendChild(titleSpan);
   h.appendChild(cnt);
   if (opts.clearable) {
     const clr = document.createElement('button');
     clr.className = 'title-clear';
-    clr.textContent = '清空';
+    clr.textContent = t('clear');
     clr.addEventListener('click', opts.onClear);
     h.appendChild(clr);
   }
@@ -799,8 +937,16 @@ function byA2(a2) { return COUNTRY_DATA.find(c => c.a2 === a2); }
 function renderMain() {
   mainEl.textContent = '';
   const list = visibleCountries();
-  $('totalStat').textContent = COUNTRY_DATA.length;
-  $('matchStat').textContent = list.length;
+  // 重建统计条（本地化文案 + 粗体数字，数字用 textContent 安全写入）
+  const statBar = $('statBar');
+  statBar.textContent = '';
+  const tmpl = t('stat', { n: list.length, m: COUNTRY_DATA.length });
+  const parts = tmpl.split(/(\d+)/);
+  for (const p of parts) {
+    if (p === '') continue;
+    if (/^\d+$/.test(p)) { const b = document.createElement('b'); b.textContent = p; statBar.appendChild(b); }
+    else statBar.appendChild(document.createTextNode(p));
+  }
 
   const favList = [...favs].map(byA2).filter(Boolean);
   const recentList = recent.map(byA2).filter(Boolean);
@@ -808,15 +954,15 @@ function renderMain() {
   // 「全部」且无搜索词时，顶部展示收藏与最近使用
   if (activeTab === '全部' && !query) {
     if (favList.length) {
-      mainEl.appendChild(sectionEl('⭐ 收藏', favList, {
+      mainEl.appendChild(sectionEl(t('favTitle'), favList, {
         clearable: true,
-        onClear: () => { favs.clear(); writeLS(LS_FAV, []); syncStars(); renderMain(); refreshDetailFav(); toast('已清空收藏'); },
+        onClear: () => { favs.clear(); writeLS(LS_FAV, []); syncStars(); renderMain(); refreshDetailFav(); toast(t('favCleared')); },
       }));
     }
     if (recentList.length) {
-      mainEl.appendChild(sectionEl('🕘 最近使用', recentList, {
+      mainEl.appendChild(sectionEl(t('recentTitle'), recentList, {
         clearable: true,
-        onClear: () => { recent = []; writeLS(LS_RECENT, []); renderMain(); toast('已清空最近使用'); },
+        onClear: () => { recent = []; writeLS(LS_RECENT, []); renderMain(); toast(t('recentCleared')); },
       }));
     }
   }
@@ -828,9 +974,9 @@ function renderMain() {
     big.className = 'big';
     big.textContent = '🔍';
     const h3 = document.createElement('h3');
-    h3.textContent = '没有匹配的国家或地区';
+    h3.textContent = t('emptyT');
     const p = document.createElement('p');
-    p.textContent = '试试中文名、英文名、两位国家码（CN）、货币码（USD）或电话区号（+86）。';
+    p.textContent = t('emptyD');
     empty.appendChild(big); empty.appendChild(h3); empty.appendChild(p);
     mainEl.appendChild(empty);
     return;
@@ -839,17 +985,17 @@ function renderMain() {
   if (activeTab === '全部') {
     for (const reg of REGIONS) {
       const sub = list.filter(c => c.reg === reg);
-      if (sub.length) mainEl.appendChild(sectionEl(reg, sub));
+      if (sub.length) mainEl.appendChild(sectionEl(localReg(reg), sub));
     }
   } else {
-    mainEl.appendChild(sectionEl(activeTab, list));
+    mainEl.appendChild(sectionEl(localReg(activeTab), list));
   }
 }
 
 /* ---------- 收藏 / 最近 ---------- */
 function toggleFav(a2) {
-  if (favs.has(a2)) { favs.delete(a2); toast('已取消收藏'); }
-  else { favs.add(a2); toast('已加入收藏'); }
+  if (favs.has(a2)) { favs.delete(a2); toast(t('favRemove')); }
+  else { favs.add(a2); toast(t('favAdd')); }
   writeLS(LS_FAV, [...favs]);
   syncStars();
   refreshDetailFav();
@@ -881,7 +1027,7 @@ function detailRow(labelText, valueText, copyText, valueClass) {
   value.title = valueText;
   const btn = document.createElement('button');
   btn.className = 'copy-mini';
-  btn.title = `复制${labelText}`;
+  btn.title = t('copyPrefix') + ' ' + labelText;
   btn.innerHTML = SVG_COPY; // 静态常量
   btn.addEventListener('click', () => copyText_(copyText ?? valueText, labelText));
   row.appendChild(label); row.appendChild(value); row.appendChild(btn);
@@ -897,7 +1043,7 @@ function sectionTitle(text) {
 
 function tzTimeStr(tz) {
   try {
-    const time = new Intl.DateTimeFormat('zh-CN', {
+    const time = new Intl.DateTimeFormat(intlLocale(), {
       timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(new Date());
     const parts = new Intl.DateTimeFormat('en', {
@@ -912,43 +1058,43 @@ function renderDetail() {
   const c = byA2(selectedA2);
   if (!c) return;
   $('detailBig').textContent = c.flag || '🏳️';
-  $('detailCn').textContent = c.cn;
+  $('detailCn').textContent = localName(c);
   $('detailEn').textContent = c.en;
 
   detailBody.textContent = '';
 
-  detailBody.appendChild(sectionTitle('编码信息'));
+  detailBody.appendChild(sectionTitle(t('codeInfo')));
   detailBody.appendChild(detailRow('CCA2', c.a2));
   detailBody.appendChild(detailRow('CCA3', c.a3));
-  if (c.n3) detailBody.appendChild(detailRow('数字码', c.n3));
-  if (c.tld) detailBody.appendChild(detailRow('顶级域', c.tld));
-  if (c.tel) detailBody.appendChild(detailRow('电话区号', c.tel));
+  if (c.n3) detailBody.appendChild(detailRow(t('numCode'), c.n3));
+  if (c.tld) detailBody.appendChild(detailRow(t('tld'), c.tld));
+  if (c.tel) detailBody.appendChild(detailRow(t('dialCode'), c.tel));
 
-  detailBody.appendChild(sectionTitle('基本信息'));
-  detailBody.appendChild(detailRow('官方名', c.off));
-  if (c.cap) detailBody.appendChild(detailRow('首都', c.cap));
-  detailBody.appendChild(detailRow('大洲', c.reg));
-  if (c.lang) detailBody.appendChild(detailRow('语言', c.lang));
+  detailBody.appendChild(sectionTitle(t('basicInfo')));
+  detailBody.appendChild(detailRow(t('official'), lang === 'en' ? c.en : (lang === 'zh-CN' ? c.off : localName(c))));
+  if (c.cap) detailBody.appendChild(detailRow(t('capital'), c.cap));
+  detailBody.appendChild(detailRow(t('region'), localReg(c.reg)));
+  if (c.lang) detailBody.appendChild(detailRow(t('language'), c.lang));
 
   if (c.cur.length) {
-    detailBody.appendChild(sectionTitle('货币'));
+    detailBody.appendChild(sectionTitle(t('currency')));
     for (const cur of c.cur) {
       detailBody.appendChild(detailRow(cur.c, `${cur.s ? cur.s + ' ' : ''}${cur.n}`, cur.c));
       let preview = '';
       try {
-        preview = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: cur.c }).format(1234.56);
+        preview = new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: cur.c }).format(1234.56);
       } catch { /* 不支持币种跳过 */ }
       if (preview) {
         const sub = document.createElement('div');
         sub.className = 'detail-sub';
-        sub.textContent = `格式示例：${preview}`;
+        sub.textContent = t('curFmt', { x: preview });
         detailBody.appendChild(sub);
       }
     }
   }
 
   if (c.tz.length) {
-    detailBody.appendChild(sectionTitle('时区（当前时间）'));
+    detailBody.appendChild(sectionTitle(t('tzTitle')));
     // moment-timezone 含别名时区（如 Detroit 同 New York），按当前时间+偏移去重
     const seen = new Set();
     const zones = c.tz.filter(tz => {
@@ -964,7 +1110,7 @@ function renderDetail() {
     if (zones.length > 5) {
       const sub = document.createElement('div');
       sub.className = 'detail-sub';
-      sub.textContent = `共 ${zones.length} 个时区，仅展示前 5 个`;
+      sub.textContent = t('tzOverflow', { n: zones.length });
       detailBody.appendChild(sub);
     }
   }
@@ -1029,7 +1175,7 @@ async function copyText_(text, label) {
     document.execCommand('copy');
     ta.remove();
   }
-  toast(`已复制${label ? ' ' + label : ''}：${text}`);
+  toast(t('copied', { l: label || t('copyPrefix'), t: text }));
 }
 
 const tooltipEl = $('tooltip');
@@ -1093,8 +1239,87 @@ document.addEventListener('keydown', e => {
   }
 });
 
+/* ---------- 语言切换 ---------- */
+// 根据浏览器语言猜测初始语言（无本地保存时）
+function detectLang() {
+  const nav = (navigator.language || navigator.userLanguage || 'zh-CN').toLowerCase();
+  if (nav.startsWith('zh-tw') || nav.startsWith('zh-hant')) return 'zh-TW';
+  if (nav.startsWith('zh')) return 'zh-CN';
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('ko')) return 'ko';
+  if (nav.startsWith('th')) return 'th';
+  if (nav.startsWith('ms')) return 'ms';
+  if (nav.startsWith('en')) return 'en';
+  return 'zh-CN';
+}
+
+// 应用静态 HTML 元素的本地化文案
+function applyStaticI18n() {
+  document.title = t('title');
+  document.documentElement.lang = lang;
+  $('appTitle').textContent = t('title');
+  $('appSub').textContent = t('subtitle');
+  const gh = $('githubLink');
+  gh.title = t('githubTitle');
+  gh.setAttribute('aria-label', t('githubTitle'));
+  $('langBtn').title = t('langTitle');
+  $('langBtn').setAttribute('aria-label', t('langTitle'));
+  searchInput.placeholder = t('searchPh');
+  clearSearchBtn.title = t('clearSearch');
+  // 带标记的 title / aria-label
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+}
+
+// 切换语言：保存、刷新界面与全量重渲染
+function setLang(code) {
+  if (!LANGS[code]) return;
+  lang = code;
+  try { localStorage.setItem(LS_LANG, code); } catch { /* 忽略 */ }
+  renderLangMenu();
+  applyStaticI18n();
+  renderTabs();
+  renderMain();
+  if (selectedA2) renderDetail();
+}
+
+// 构建语言下拉菜单
+function renderLangMenu() {
+  const menu = $('langMenu');
+  menu.textContent = '';
+  for (const code of Object.keys(LANGS)) {
+    const item = document.createElement('button');
+    item.className = 'lang-item' + (lang === code ? ' active' : '');
+    item.setAttribute('role', 'menuitem');
+    item.textContent = LANGS[code];
+    const check = document.createElement('span');
+    check.className = 'check';
+    check.textContent = '✓';
+    item.appendChild(check);
+    item.addEventListener('click', () => {
+      setLang(code);
+      menu.classList.remove('show');
+    });
+    menu.appendChild(item);
+  }
+}
+$('langBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  $('langMenu').classList.toggle('show');
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.lang-wrap')) $('langMenu').classList.remove('show');
+});
+
 /* ---------- 启动 ---------- */
+// 先确定语言（本地保存 -> 浏览器语言 -> 默认 zh-CN），再渲染
+try {
+  const savedLang = localStorage.getItem(LS_LANG);
+  lang = (savedLang && LANGS[savedLang]) ? savedLang : detectLang();
+} catch { lang = detectLang(); }
 initTheme();
+renderLangMenu();
+applyStaticI18n();
 renderTabs();
 renderMain();
 </script>
