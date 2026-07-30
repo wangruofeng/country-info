@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国家信息速查</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --text: #1f2328;
+    --text-muted: #6b7280;
+    --text-faint: #9ca3af;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --success: #16a34a;
+    --star: #f59e0b;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --radius: 10px;
+  }
+  html.dark {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --border-strong: #484f58;
+    --text: #e6edf3;
+    --text-muted: #9198a1;
+    --text-faint: #6e7681;
+    --accent: #58a6ff;
+    --accent-hover: #79b8ff;
+    --accent-soft: #1a2332;
+    --danger: #f87171;
+    --danger-soft: #2a1a1c;
+    --success: #3fb950;
+    --star: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; background: var(--panel);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 650; }
+  .logo .mark {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff; font-size: 16px; font-weight: 700; line-height: 1;
+  }
+  .logo .sub { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+  .spacer { flex: 1; }
+
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--text-muted); cursor: pointer;
+    display: grid; place-items: center; transition: all .15s; flex-shrink: 0;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--bg); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  header .icon-btn { border: none; background: transparent; }
+  header .icon-btn:hover { background: var(--bg); }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; background: var(--panel);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .search-wrap { flex: 1; position: relative; min-width: 0; }
+  .search-wrap svg.search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; color: var(--text-faint); pointer-events: none;
+  }
+  #searchInput {
+    width: 100%; height: 38px; padding: 0 34px 0 34px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font-size: 14px;
+    outline: none; transition: border .15s, box-shadow .15s;
+  }
+  #searchInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  #searchInput::placeholder { color: var(--text-faint); }
+  .search-wrap .clear-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 50%; border: 0;
+    background: var(--border); color: var(--text-muted); cursor: pointer;
+    display: none; align-items: center; justify-content: center; padding: 0;
+  }
+  .search-wrap .clear-btn:hover { background: var(--border-strong); color: var(--text); }
+  .search-wrap .clear-btn.show { display: flex; }
+  .search-wrap .clear-btn svg { width: 12px; height: 12px; }
+  /* 「/ 聚焦搜索」快捷键提示徽标：聚焦或已有文字时隐藏 */
+  .search-wrap .search-hint {
+    position: absolute; right: 36px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; line-height: 1.4; color: var(--text-faint);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 6px; background: var(--panel); pointer-events: none;
+  }
+  #searchInput:focus ~ .search-hint,
+  .search-wrap .clear-btn.show ~ .search-hint { display: none; }
+  @media (hover: none) { .search-wrap .search-hint { display: none; } }
+
+  .stat { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .stat b { color: var(--text); font-weight: 600; }
+
+  /* ---------- Region tabs ---------- */
+  .tabs {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding: 10px 20px; background: var(--panel);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0; height: 32px; padding: 0 14px;
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--panel); color: var(--text-muted); font-size: 13px;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .tab-btn:hover { background: var(--bg); color: var(--text); border-color: var(--border-strong); }
+  .tab-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- App body ---------- */
+  .app-body { flex: 1; display: flex; overflow: hidden; }
+  main {
+    /* 顶部不留 padding：sticky 标题 pin 在 content-box 边缘，padding 透明带会让滚动内容穿透 */
+    flex: 1; overflow-y: auto; padding: 0 20px 60px;
+  }
+
+  /* ---------- Sections & grid ---------- */
+  .reg-section { margin-bottom: 28px; }
+  /* 首屏顶部间距走 margin（随滚动滚走），不能放 main 的 padding */
+  .reg-section:first-child { margin-top: 18px; }
+  .reg-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    /* 间距全走 padding（在背景内）：margin 透明带会让滚动内容穿透 pin 住的标题 */
+    margin: 0; position: sticky; top: 0;
+    background: var(--bg); padding: 8px 0 12px; z-index: 5;
+  }
+  .reg-title .count {
+    font-size: 12px; color: var(--text-muted); font-weight: 400;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .reg-title .title-clear {
+    margin-left: auto; padding: 3px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--text-muted); font-size: 12px; cursor: pointer; transition: all .12s;
+  }
+  .reg-title .title-clear:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+  .country-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 8px;
+  }
+  .country-card {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 12px 8px 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform .12s, border-color .12s, box-shadow .12s;
+    position: relative;
+  }
+  .country-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(37,99,235,.15);
+  }
+  .country-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .country-card .flag { font-size: 34px; line-height: 1.2; }
+  .country-card .name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .country-card .code {
+    font-size: 11px; color: var(--text-faint);
+    font-family: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  }
+  .fav-star {
+    position: absolute; top: 3px; right: 3px;
+    width: 20px; height: 20px; padding: 2px;
+    border: 0; background: transparent; cursor: pointer;
+    color: var(--text-faint); opacity: 0;
+    transition: opacity .12s, color .12s, transform .12s;
+  }
+  .fav-star svg { width: 100%; height: 100%; display: block; }
+  .country-card:hover .fav-star, .fav-star.on { opacity: 1; }
+  .fav-star:hover { color: var(--star); transform: scale(1.15); }
+  .fav-star.on { color: var(--star); }
+  .fav-star.on svg { fill: currentColor; }
+  /* 触屏无 hover：星标常显半透明，已收藏保持实色 */
+  @media (hover: none) { .fav-star { opacity: .45; } .fav-star.on { opacity: 1; } }
+
+  /* ---------- Empty state ---------- */
+  .empty-state {
+    max-width: 420px; margin: 10vh auto; text-align: center;
+    color: var(--text-muted);
+  }
+  .empty-state .big { font-size: 56px; margin-bottom: 14px; }
+  .empty-state h3 { margin: 0 0 8px; font-size: 17px; color: var(--text); }
+  .empty-state p { margin: 0; font-size: 13.5px; line-height: 1.7; }
+
+  /* ---------- Detail panel ---------- */
+  .detail {
+    width: 340px; flex-shrink: 0; background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .detail.hidden { display: none; }
+  .detail-head {
+    padding: 16px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .detail-big {
+    width: 72px; height: 72px; font-size: 46px;
+    display: grid; place-items: center;
+    background: var(--bg); border-radius: var(--radius);
+    border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .detail-names { min-width: 0; }
+  .detail-names .cn { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 4px; }
+  .detail-names .en { font-size: 12px; color: var(--text-muted); margin: 0; word-break: break-word; }
+  .detail-body { padding: 14px 18px 24px; }
+  .detail-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .detail-row label {
+    width: 66px; flex-shrink: 0; font-size: 12px; color: var(--text-muted);
+  }
+  .detail-row .value {
+    flex: 1; min-width: 0; font-size: 13px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 8px;
+    font-family: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .detail-row .copy-mini {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--text-muted); cursor: pointer;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .detail-row .copy-mini:hover { color: var(--accent); border-color: var(--accent); }
+  .detail-row .copy-mini svg { width: 13px; height: 13px; }
+
+  .detail-section-title {
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    margin: 18px 0 10px; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .detail-sub {
+    font-size: 11px; color: var(--text-faint); margin: -6px 0 10px 74px;
+  }
+  .tz-time { color: var(--accent); }
+
+  .detail-close {
+    display: none; margin-left: 0;
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 0; background: var(--bg); color: var(--text-muted); cursor: pointer;
+  }
+  .detail-close:hover { color: var(--text); }
+  .detail-fav {
+    margin-left: auto; flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 6px; padding: 4px;
+    border: 0; background: var(--bg); color: var(--text-muted); cursor: pointer;
+    display: grid; place-items: center; transition: color .12s;
+  }
+  .detail-fav svg { width: 100%; height: 100%; }
+  .detail-fav:hover { color: var(--star); }
+  .detail-fav.on { color: var(--star); }
+  .detail-fav.on svg { fill: currentColor; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: var(--panel);
+    padding: 9px 16px; border-radius: 8px; font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    opacity: 0; pointer-events: none; transition: all .22s;
+    z-index: 200; display: flex; align-items: center; gap: 7px;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast svg { width: 15px; height: 15px; }
+
+  /* ---------- Tooltip ---------- */
+  #tooltip {
+    position: fixed; z-index: 150; pointer-events: none;
+    background: var(--text); color: var(--panel);
+    padding: 5px 10px; border-radius: 6px; font-size: 12px;
+    opacity: 0; transform: translate(-50%, -100%); margin-top: -8px;
+    transition: opacity .12s; white-space: nowrap;
+  }
+  #tooltip.show { opacity: 1; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+  @media (max-width: 768px) {
+    header { padding: 12px 14px; }
+    .toolbar { padding: 8px 14px; }
+    .tabs { padding: 8px 14px; }
+    main { padding: 0 14px 50px; }
+    .reg-section:first-child { margin-top: 12px; }
+    .logo .sub { display: none; }
+    .country-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+    .app-body { flex-direction: column; }
+    .detail {
+      width: auto; border-left: 0; border-top: 1px solid var(--border);
+      max-height: 45vh; display: none;
+    }
+    .detail.visible { display: flex; }
+    .detail-close { display: grid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="mark">🌐</div>
+    <div>
+      国家信息速查
+      <div class="sub">国家码 / 货币 / 区号 / 时区</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <a class="icon-btn" href="https://github.com/wangruofeng/country-info" target="_blank" rel="noopener noreferrer" title="查看 GitHub 源码" aria-label="GitHub 源码仓库">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.78 0 12.292c0 5.211 3.438 9.63 8.205 11.188.6.111.82-.254.82-.567 0-.28-.01-1.022-.015-2.005-3.338.711-4.042-1.582-4.042-1.582-.546-1.361-1.335-1.725-1.335-1.725-1.087-.731.084-.716.084-.716 1.205.082 1.838 1.215 1.838 1.215 1.07 1.803 2.809 1.282 3.495.981.108-.763.417-1.282.76-1.577-2.665-.295-5.466-1.309-5.466-5.827 0-1.287.465-2.339 1.235-3.164-.135-.297-.54-1.498.105-3.121 0 0 1.005-.316 3.3 1.209.96-.262 1.98-.392 3-.397 1.02.005 2.04.135 3 .397 2.28-1.525 3.285-1.209 3.285-1.209.645 1.623.24 2.824.12 3.121.765.825 1.23 1.877 1.23 3.164 0 4.53-2.805 5.527-5.475 5.817.42.354.81 1.077.81 2.182 0 1.578-.015 2.846-.015 3.229 0 .309.21.678.825.562C20.565 21.917 24 17.495 24 12.292 24 5.78 18.627.5 12 .5z"/></svg>
+  </a>
+  <button class="icon-btn" id="themeBtn" title="切换深浅色"></button>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="搜索中文名、英文名、国家码、货币或区号（如：美国、CN、USD、+86）…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <button class="clear-btn" id="clearSearch" title="清空搜索">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <kbd class="search-hint">/</kbd>
+  </div>
+  <div class="stat" id="statBar">共 <b id="totalStat">0</b> 个 · 匹配 <b id="matchStat">0</b> 个</div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="app-body">
+  <main id="main"></main>
+  <aside class="detail hidden" id="detail">
+    <div class="detail-head">
+      <div class="detail-big" id="detailBig">🌐</div>
+      <div class="detail-names">
+        <p class="cn" id="detailCn">—</p>
+        <p class="en" id="detailEn">—</p>
+      </div>
+      <button class="detail-fav" id="detailFav" title="收藏" aria-label="收藏"></button>
+      <button class="detail-close" id="detailClose" title="关闭详情">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </aside>
+</div>
+
+<div id="toast"></div>
+<div id="tooltip"></div>
+
+<script>
+/* =========================================================
+   国家信息速查
+   - 中文 / 英文 / 国家码 / 货币 / 区号搜索
+   - 大洲分组浏览 + 收藏 + 最近使用
+   - 详情面板：ISO 码 / 货币格式 / 时区当前时间，逐项复制
+   - 深浅色主题
+   数据来源：mledoze/world-countries（MIT）+ moment-timezone
+   ========================================================= */
+
+const COUNTRY_DATA = [
+  { a2: "AD", a3: "AND", n3: "020", en: "Andorra", off: "安道尔公国", cn: "安道尔", flag: "🇦🇩", reg: "欧洲", cap: "Andorra la Vella", tel: "+376", tld: ".ad", tz: ["Europe/Andorra"], lang: "Catalan", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["安道尔","andorra","ad","and","+376","376","eur","欧元"] },
+  { a2: "AE", a3: "ARE", n3: "784", en: "United Arab Emirates", off: "阿拉伯联合酋长国", cn: "阿拉伯联合酋长国", flag: "🇦🇪", reg: "亚洲", cap: "Abu Dhabi", tel: "+971", tld: ".ae", tz: ["Asia/Dubai"], lang: "Arabic", cur: [{"c":"AED","s":"د.إ","n":"阿联酋迪拉姆"}], kw: ["阿拉伯联合酋长国","united arab emirates","ae","are","+971","971","aed","阿联酋迪拉姆","uae","emirates","阿联酋","迪拜"] },
+  { a2: "AF", a3: "AFG", n3: "004", en: "Afghanistan", off: "阿富汗伊斯兰共和国", cn: "阿富汗", flag: "🇦🇫", reg: "亚洲", cap: "Kabul", tel: "+93", tld: ".af", tz: ["Asia/Kabul"], lang: "Dari / Pashto / Turkmen", cur: [{"c":"AFN","s":"؋","n":"阿富汗尼"}], kw: ["阿富汗","afghanistan","af","afg","+93","93","afn","阿富汗尼"] },
+  { a2: "AG", a3: "ATG", n3: "028", en: "Antigua and Barbuda", off: "安提瓜和巴布达", cn: "安提瓜和巴布达", flag: "🇦🇬", reg: "北美洲", cap: "Saint John's", tel: "+1268", tld: ".ag", tz: ["America/Puerto_Rico","America/Antigua"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["安提瓜和巴布达","antigua and barbuda","ag","atg","+1268","1268","xcd","东加勒比元"] },
+  { a2: "AI", a3: "AIA", n3: "660", en: "Anguilla", off: "安圭拉", cn: "安圭拉", flag: "🇦🇮", reg: "北美洲", cap: "The Valley", tel: "+1264", tld: ".ai", tz: ["America/Puerto_Rico","America/Anguilla"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["安圭拉","anguilla","ai","aia","+1264","1264","xcd","东加勒比元"] },
+  { a2: "AL", a3: "ALB", n3: "008", en: "Albania", off: "阿尔巴尼亚共和国", cn: "阿尔巴尼亚", flag: "🇦🇱", reg: "欧洲", cap: "Tirana", tel: "+355", tld: ".al", tz: ["Europe/Tirane"], lang: "Albanian", cur: [{"c":"ALL","s":"L","n":"Albanian lek"}], kw: ["阿尔巴尼亚","albania","al","alb","+355","355","all","Albanian lek"] },
+  { a2: "AM", a3: "ARM", n3: "051", en: "Armenia", off: "亚美尼亚共和国", cn: "亚美尼亚", flag: "🇦🇲", reg: "亚洲", cap: "Yerevan", tel: "+374", tld: ".am", tz: ["Asia/Yerevan"], lang: "Armenian", cur: [{"c":"AMD","s":"֏","n":"亚美尼亚德拉姆"}], kw: ["亚美尼亚","armenia","am","arm","+374","374","amd","亚美尼亚德拉姆"] },
+  { a2: "AO", a3: "AGO", n3: "024", en: "Angola", off: "安哥拉共和国", cn: "安哥拉", flag: "🇦🇴", reg: "非洲", cap: "Luanda", tel: "+244", tld: ".ao", tz: ["Africa/Lagos","Africa/Luanda"], lang: "Portuguese", cur: [{"c":"AOA","s":"Kz","n":"Angolan kwanza"}], kw: ["安哥拉","angola","ao","ago","+244","244","aoa","Angolan kwanza"] },
+  { a2: "AQ", a3: "ATA", n3: "010", en: "Antarctica", off: "南极洲", cn: "南极洲", flag: "🇦🇶", reg: "南极洲", cap: "", tel: "", tld: ".aq", tz: ["Antarctica/Casey","Antarctica/Davis","Antarctica/Mawson","Antarctica/Palmer","Antarctica/Rothera","Antarctica/Troll","Antarctica/Vostok","Pacific/Auckland","Pacific/Port_Moresby","Asia/Riyadh","Asia/Singapore","Antarctica/McMurdo"], lang: "", cur: [], kw: ["南极洲","antarctica","aq","ata"] },
+  { a2: "AR", a3: "ARG", n3: "032", en: "Argentina", off: "阿根廷共和国", cn: "阿根廷", flag: "🇦🇷", reg: "南美洲", cap: "Buenos Aires", tel: "+54", tld: ".ar", tz: ["America/Argentina/Buenos_Aires","America/Argentina/Cordoba","America/Argentina/Salta","America/Argentina/Jujuy","America/Argentina/Tucuman","America/Argentina/Catamarca","America/Argentina/La_Rioja","America/Argentina/San_Juan","America/Argentina/Mendoza","America/Argentina/San_Luis","America/Argentina/Rio_Gallegos","America/Argentina/Ushuaia"], lang: "Guaraní / Spanish", cur: [{"c":"ARS","s":"$","n":"阿根廷比索"}], kw: ["阿根廷","argentina","ar","arg","+54","54","ars","阿根廷比索","潘帕斯"] },
+  { a2: "AS", a3: "ASM", n3: "016", en: "American Samoa", off: "美属萨摩亚", cn: "美属萨摩亚", flag: "🇦🇸", reg: "大洋洲", cap: "Pago Pago", tel: "+1684", tld: ".as", tz: ["Pacific/Pago_Pago"], lang: "English / Samoan", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["美属萨摩亚","american samoa","as","asm","+1684","1684","usd","美元"] },
+  { a2: "AT", a3: "AUT", n3: "040", en: "Austria", off: "奥地利共和国", cn: "奥地利", flag: "🇦🇹", reg: "欧洲", cap: "Vienna", tel: "+43", tld: ".at", tz: ["Europe/Vienna"], lang: "Austro-Bavarian German", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["奥地利","austria","at","aut","+43","43","eur","欧元"] },
+  { a2: "AU", a3: "AUS", n3: "036", en: "Australia", off: "澳大利亚联邦", cn: "澳大利亚", flag: "🇦🇺", reg: "大洋洲", cap: "Canberra", tel: "+61", tld: ".au", tz: ["Australia/Lord_Howe","Antarctica/Macquarie","Australia/Hobart","Australia/Melbourne","Australia/Sydney","Australia/Broken_Hill","Australia/Brisbane","Australia/Lindeman","Australia/Adelaide","Australia/Darwin","Australia/Perth","Australia/Eucla"], lang: "English", cur: [{"c":"AUD","s":"$","n":"澳元"}], kw: ["澳大利亚","australia","au","aus","+61","61","aud","澳元","澳洲","袋鼠国"] },
+  { a2: "AW", a3: "ABW", n3: "533", en: "Aruba", off: "阿鲁巴", cn: "阿鲁巴", flag: "🇦🇼", reg: "北美洲", cap: "Oranjestad", tel: "+297", tld: ".aw", tz: ["America/Puerto_Rico","America/Aruba"], lang: "Dutch / Papiamento", cur: [{"c":"AWG","s":"ƒ","n":"阿鲁巴弗罗林"}], kw: ["阿鲁巴","aruba","aw","abw","+297","297","awg","阿鲁巴弗罗林"] },
+  { a2: "AX", a3: "ALA", n3: "248", en: "Åland Islands", off: "奥兰群岛", cn: "奥兰群岛", flag: "🇦🇽", reg: "欧洲", cap: "Mariehamn", tel: "+35818", tld: ".ax", tz: ["Europe/Helsinki","Europe/Mariehamn"], lang: "Swedish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["奥兰群岛","åland islands","ax","ala","+35818","35818","eur","欧元"] },
+  { a2: "AZ", a3: "AZE", n3: "031", en: "Azerbaijan", off: "阿塞拜疆共和国", cn: "阿塞拜疆", flag: "🇦🇿", reg: "亚洲", cap: "Baku", tel: "+994", tld: ".az", tz: ["Asia/Baku"], lang: "Azerbaijani / Russian", cur: [{"c":"AZN","s":"₼","n":"阿塞拜疆马纳特"}], kw: ["阿塞拜疆","azerbaijan","az","aze","+994","994","azn","阿塞拜疆马纳特"] },
+  { a2: "BA", a3: "BIH", n3: "070", en: "Bosnia and Herzegovina", off: "波斯尼亚和黑塞哥维那", cn: "波斯尼亚和黑塞哥维那", flag: "🇧🇦", reg: "欧洲", cap: "Sarajevo", tel: "+387", tld: ".ba", tz: ["Europe/Belgrade","Europe/Sarajevo"], lang: "Bosnian / Croatian / Serbian", cur: [{"c":"BAM","s":"KM","n":"波黑可兑换马克"}], kw: ["波斯尼亚和黑塞哥维那","bosnia and herzegovina","ba","bih","+387","387","bam","波黑可兑换马克"] },
+  { a2: "BB", a3: "BRB", n3: "052", en: "Barbados", off: "巴巴多斯", cn: "巴巴多斯", flag: "🇧🇧", reg: "北美洲", cap: "Bridgetown", tel: "+1246", tld: ".bb", tz: ["America/Barbados"], lang: "English", cur: [{"c":"BBD","s":"$","n":"巴巴多斯元"}], kw: ["巴巴多斯","barbados","bb","brb","+1246","1246","bbd","巴巴多斯元"] },
+  { a2: "BD", a3: "BGD", n3: "050", en: "Bangladesh", off: "孟加拉人民共和国", cn: "孟加拉国", flag: "🇧🇩", reg: "亚洲", cap: "Dhaka", tel: "+880", tld: ".bd", tz: ["Asia/Dhaka"], lang: "Bengali", cur: [{"c":"BDT","s":"৳","n":"孟加拉塔卡"}], kw: ["孟加拉国","bangladesh","bd","bgd","+880","880","bdt","孟加拉塔卡","孟加拉"] },
+  { a2: "BE", a3: "BEL", n3: "056", en: "Belgium", off: "比利时王国", cn: "比利时", flag: "🇧🇪", reg: "欧洲", cap: "Brussels", tel: "+32", tld: ".be", tz: ["Europe/Brussels"], lang: "German / French / Dutch", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["比利时","belgium","be","bel","+32","32","eur","欧元"] },
+  { a2: "BF", a3: "BFA", n3: "854", en: "Burkina Faso", off: "布基纳法索", cn: "布基纳法索", flag: "🇧🇫", reg: "非洲", cap: "Ouagadougou", tel: "+226", tld: ".bf", tz: ["Africa/Abidjan","Africa/Ouagadougou"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["布基纳法索","burkina faso","bf","bfa","+226","226","xof","西非法郎"] },
+  { a2: "BG", a3: "BGR", n3: "100", en: "Bulgaria", off: "保加利亚共和国", cn: "保加利亚", flag: "🇧🇬", reg: "欧洲", cap: "Sofia", tel: "+359", tld: ".bg", tz: ["Europe/Sofia"], lang: "Bulgarian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["保加利亚","bulgaria","bg","bgr","+359","359","eur","欧元"] },
+  { a2: "BH", a3: "BHR", n3: "048", en: "Bahrain", off: "巴林王国", cn: "巴林", flag: "🇧🇭", reg: "亚洲", cap: "Manama", tel: "+973", tld: ".bh", tz: ["Asia/Qatar","Asia/Bahrain"], lang: "Arabic", cur: [{"c":"BHD","s":".د.ب","n":"巴林第纳尔"}], kw: ["巴林","bahrain","bh","bhr","+973","973","bhd","巴林第纳尔"] },
+  { a2: "BI", a3: "BDI", n3: "108", en: "Burundi", off: "布隆迪共和国", cn: "布隆迪", flag: "🇧🇮", reg: "非洲", cap: "Gitega", tel: "+257", tld: ".bi", tz: ["Africa/Maputo","Africa/Bujumbura"], lang: "French / Kirundi", cur: [{"c":"BIF","s":"Fr","n":"Burundian franc"}], kw: ["布隆迪","burundi","bi","bdi","+257","257","bif","Burundian franc"] },
+  { a2: "BJ", a3: "BEN", n3: "204", en: "Benin", off: "贝宁共和国", cn: "贝宁", flag: "🇧🇯", reg: "非洲", cap: "Porto-Novo", tel: "+229", tld: ".bj", tz: ["Africa/Lagos","Africa/Porto-Novo"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["贝宁","benin","bj","ben","+229","229","xof","西非法郎"] },
+  { a2: "BL", a3: "BLM", n3: "652", en: "Saint Barthélemy", off: "圣巴泰勒米集体", cn: "圣巴泰勒米", flag: "🇧🇱", reg: "北美洲", cap: "Gustavia", tel: "+590", tld: ".bl", tz: ["America/Puerto_Rico","America/St_Barthelemy"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["圣巴泰勒米","saint barthélemy","bl","blm","+590","590","eur","欧元"] },
+  { a2: "BM", a3: "BMU", n3: "060", en: "Bermuda", off: "百慕大", cn: "百慕大", flag: "🇧🇲", reg: "北美洲", cap: "Hamilton", tel: "+1441", tld: ".bm", tz: ["Atlantic/Bermuda"], lang: "English", cur: [{"c":"BMD","s":"$","n":"百慕大元"}], kw: ["百慕大","bermuda","bm","bmu","+1441","1441","bmd","百慕大元"] },
+  { a2: "BN", a3: "BRN", n3: "096", en: "Brunei", off: "文莱和平之国", cn: "文莱", flag: "🇧🇳", reg: "亚洲", cap: "Bandar Seri Begawan", tel: "+673", tld: ".bn", tz: ["Asia/Kuching","Asia/Brunei"], lang: "Malay", cur: [{"c":"BND","s":"$","n":"文莱元"},{"c":"SGD","s":"$","n":"新加坡元"}], kw: ["文莱","brunei","bn","brn","+673","673","bnd","sgd","文莱元","新加坡元"] },
+  { a2: "BO", a3: "BOL", n3: "068", en: "Bolivia", off: "多民族玻利维亚国", cn: "玻利维亚", flag: "🇧🇴", reg: "南美洲", cap: "Sucre", tel: "+591", tld: ".bo", tz: ["America/La_Paz"], lang: "Aymara / Guaraní / Quechua / Spanish", cur: [{"c":"BOB","s":"Bs.","n":"玻利维亚诺"}], kw: ["玻利维亚","bolivia","bo","bol","+591","591","bob","玻利维亚诺"] },
+  { a2: "BQ", a3: "BES", n3: "535", en: "Caribbean Netherlands", off: "荷蘭加勒比區", cn: "荷蘭加勒比區", flag: "", reg: "北美洲", cap: "Kralendijk", tel: "+599", tld: ".bq", tz: ["America/Puerto_Rico","America/Kralendijk"], lang: "English / Dutch / Papiamento", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["荷蘭加勒比區","caribbean netherlands","bq","bes","+599","599","usd","美元"] },
+  { a2: "BR", a3: "BRA", n3: "076", en: "Brazil", off: "巴西联邦共和国", cn: "巴西", flag: "🇧🇷", reg: "南美洲", cap: "Brasília", tel: "+55", tld: ".br", tz: ["America/Noronha","America/Belem","America/Fortaleza","America/Recife","America/Araguaina","America/Maceio","America/Bahia","America/Sao_Paulo","America/Campo_Grande","America/Cuiaba","America/Santarem","America/Porto_Velho"], lang: "Portuguese", cur: [{"c":"BRL","s":"R$","n":"巴西雷亚尔"}], kw: ["巴西","brazil","br","bra","+55","55","brl","巴西雷亚尔","桑巴国"] },
+  { a2: "BS", a3: "BHS", n3: "044", en: "Bahamas", off: "巴哈马联邦", cn: "巴哈马", flag: "🇧🇸", reg: "北美洲", cap: "Nassau", tel: "+1242", tld: ".bs", tz: ["America/Toronto","America/Nassau"], lang: "English", cur: [{"c":"BSD","s":"$","n":"巴哈马元"},{"c":"USD","s":"$","n":"美元"}], kw: ["巴哈马","bahamas","bs","bhs","+1242","1242","bsd","usd","巴哈马元","美元"] },
+  { a2: "BT", a3: "BTN", n3: "064", en: "Bhutan", off: "不丹王国", cn: "不丹", flag: "🇧🇹", reg: "亚洲", cap: "Thimphu", tel: "+975", tld: ".bt", tz: ["Asia/Thimphu"], lang: "Dzongkha", cur: [{"c":"BTN","s":"Nu.","n":"不丹努尔特鲁姆"},{"c":"INR","s":"₹","n":"印度卢比"}], kw: ["不丹","bhutan","bt","btn","+975","975","inr","不丹努尔特鲁姆","印度卢比"] },
+  { a2: "BV", a3: "BVT", n3: "074", en: "Bouvet Island", off: "布维岛", cn: "布维岛", flag: "🇧🇻", reg: "南极洲", cap: "", tel: "+47", tld: ".bv", tz: [], lang: "Norwegian", cur: [], kw: ["布维岛","bouvet island","bv","bvt","+47","47"] },
+  { a2: "BW", a3: "BWA", n3: "072", en: "Botswana", off: "博茨瓦纳共和国", cn: "博茨瓦纳", flag: "🇧🇼", reg: "非洲", cap: "Gaborone", tel: "+267", tld: ".bw", tz: ["Africa/Maputo","Africa/Gaborone"], lang: "English / Tswana", cur: [{"c":"BWP","s":"P","n":"博茨瓦纳普拉"}], kw: ["博茨瓦纳","botswana","bw","bwa","+267","267","bwp","博茨瓦纳普拉"] },
+  { a2: "BY", a3: "BLR", n3: "112", en: "Belarus", off: "白俄罗斯共和国", cn: "白俄罗斯", flag: "🇧🇾", reg: "欧洲", cap: "Minsk", tel: "+375", tld: ".by", tz: ["Europe/Minsk"], lang: "Belarusian / Russian", cur: [{"c":"BYN","s":"Br","n":"Belarusian ruble"}], kw: ["白俄罗斯","belarus","by","blr","+375","375","byn","Belarusian ruble","白俄"] },
+  { a2: "BZ", a3: "BLZ", n3: "084", en: "Belize", off: "伯利兹", cn: "伯利兹", flag: "🇧🇿", reg: "北美洲", cap: "Belmopan", tel: "+501", tld: ".bz", tz: ["America/Belize"], lang: "Belizean Creole / English / Spanish", cur: [{"c":"BZD","s":"$","n":"伯利兹元"}], kw: ["伯利兹","belize","bz","blz","+501","501","bzd","伯利兹元"] },
+  { a2: "CA", a3: "CAN", n3: "124", en: "Canada", off: "加拿大", cn: "加拿大", flag: "🇨🇦", reg: "北美洲", cap: "Ottawa", tel: "+1", tld: ".ca", tz: ["America/St_Johns","America/Halifax","America/Glace_Bay","America/Moncton","America/Goose_Bay","America/Toronto","America/Iqaluit","America/Winnipeg","America/Resolute","America/Rankin_Inlet","America/Regina","America/Swift_Current"], lang: "English / French", cur: [{"c":"CAD","s":"$","n":"加元"}], kw: ["加拿大","canada","ca","can","+1","1","cad","加元","枫叶国"] },
+  { a2: "CC", a3: "CCK", n3: "166", en: "Cocos (Keeling) Islands", off: "科科斯", cn: "科科斯", flag: "🇨🇨", reg: "大洋洲", cap: "West Island", tel: "+61", tld: ".cc", tz: ["Asia/Yangon","Indian/Cocos"], lang: "English", cur: [{"c":"AUD","s":"$","n":"澳元"}], kw: ["科科斯","cocos (keeling) islands","cc","cck","+61","61","aud","澳元"] },
+  { a2: "CD", a3: "COD", n3: "180", en: "DR Congo", off: "刚果民主共和国", cn: "民主刚果", flag: "🇨🇩", reg: "非洲", cap: "Kinshasa", tel: "+243", tld: ".cd", tz: ["Africa/Maputo","Africa/Lagos","Africa/Kinshasa","Africa/Lubumbashi"], lang: "French / Kikongo / Lingala / Tshiluba / Swahili", cur: [{"c":"CDF","s":"FC","n":"Congolese franc"}], kw: ["民主刚果","dr congo","cd","cod","+243","243","cdf","Congolese franc"] },
+  { a2: "CF", a3: "CAF", n3: "140", en: "Central African Republic", off: "中非共和国", cn: "中非共和国", flag: "🇨🇫", reg: "非洲", cap: "Bangui", tel: "+236", tld: ".cf", tz: ["Africa/Lagos","Africa/Bangui"], lang: "French / Sango", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["中非共和国","central african republic","cf","caf","+236","236","xaf","中非法郎"] },
+  { a2: "CG", a3: "COG", n3: "178", en: "Congo", off: "刚果共和国", cn: "刚果", flag: "🇨🇬", reg: "非洲", cap: "Brazzaville", tel: "+242", tld: ".cg", tz: ["Africa/Lagos","Africa/Brazzaville"], lang: "French / Kikongo / Lingala", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["刚果","congo","cg","cog","+242","242","xaf","中非法郎"] },
+  { a2: "CH", a3: "CHE", n3: "756", en: "Switzerland", off: "瑞士联邦", cn: "瑞士", flag: "🇨🇭", reg: "欧洲", cap: "Bern", tel: "+41", tld: ".ch", tz: ["Europe/Zurich"], lang: "French / Swiss German / Italian / Romansh", cur: [{"c":"CHF","s":"Fr.","n":"瑞士法郎"}], kw: ["瑞士","switzerland","ch","che","+41","41","chf","瑞士法郎"] },
+  { a2: "CI", a3: "CIV", n3: "384", en: "Ivory Coast", off: "科特迪瓦共和国", cn: "科特迪瓦", flag: "🇨🇮", reg: "非洲", cap: "Yamoussoukro", tel: "+225", tld: ".ci", tz: ["Africa/Abidjan"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["科特迪瓦","ivory coast","ci","civ","+225","225","xof","西非法郎"] },
+  { a2: "CK", a3: "COK", n3: "184", en: "Cook Islands", off: "库克群岛", cn: "库克群岛", flag: "🇨🇰", reg: "大洋洲", cap: "Avarua", tel: "+682", tld: ".ck", tz: ["Pacific/Rarotonga"], lang: "English / Cook Islands Māori", cur: [{"c":"CKD","s":"$","n":"Cook Islands dollar"},{"c":"NZD","s":"$","n":"新西兰元"}], kw: ["库克群岛","cook islands","ck","cok","+682","682","ckd","nzd","Cook Islands dollar","新西兰元"] },
+  { a2: "CL", a3: "CHL", n3: "152", en: "Chile", off: "智利共和国", cn: "智利", flag: "🇨🇱", reg: "南美洲", cap: "Santiago", tel: "+56", tld: ".cl", tz: ["America/Santiago","America/Coyhaique","America/Punta_Arenas","Pacific/Easter"], lang: "Spanish", cur: [{"c":"CLP","s":"$","n":"智利比索"}], kw: ["智利","chile","cl","chl","+56","56","clp","智利比索"] },
+  { a2: "CM", a3: "CMR", n3: "120", en: "Cameroon", off: "喀麦隆共和国", cn: "喀麦隆", flag: "🇨🇲", reg: "非洲", cap: "Yaoundé", tel: "+237", tld: ".cm", tz: ["Africa/Lagos","Africa/Douala"], lang: "English / French", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["喀麦隆","cameroon","cm","cmr","+237","237","xaf","中非法郎"] },
+  { a2: "CN", a3: "CHN", n3: "156", en: "China", off: "中华人民共和国", cn: "中国", flag: "🇨🇳", reg: "亚洲", cap: "Beijing", tel: "+86", tld: ".cn", tz: ["Asia/Shanghai","Asia/Urumqi"], lang: "Chinese", cur: [{"c":"CNY","s":"¥","n":"人民币"}], kw: ["中国","china","cn","chn","+86","86","cny","人民币","大陆","内地","中华人民共和国"] },
+  { a2: "CO", a3: "COL", n3: "170", en: "Colombia", off: "哥伦比亚共和国", cn: "哥伦比亚", flag: "🇨🇴", reg: "南美洲", cap: "Bogotá", tel: "+57", tld: ".co", tz: ["America/Bogota"], lang: "Spanish", cur: [{"c":"COP","s":"$","n":"哥伦比亚比索"}], kw: ["哥伦比亚","colombia","co","col","+57","57","cop","哥伦比亚比索"] },
+  { a2: "CR", a3: "CRI", n3: "188", en: "Costa Rica", off: "哥斯达黎加共和国", cn: "哥斯达黎加", flag: "🇨🇷", reg: "北美洲", cap: "San José", tel: "+506", tld: ".cr", tz: ["America/Costa_Rica"], lang: "Spanish", cur: [{"c":"CRC","s":"₡","n":"哥斯达黎加科朗"}], kw: ["哥斯达黎加","costa rica","cr","cri","+506","506","crc","哥斯达黎加科朗"] },
+  { a2: "CU", a3: "CUB", n3: "192", en: "Cuba", off: "古巴共和国", cn: "古巴", flag: "🇨🇺", reg: "北美洲", cap: "Havana", tel: "+53", tld: ".cu", tz: ["America/Havana"], lang: "Spanish", cur: [{"c":"CUC","s":"$","n":"Cuban convertible peso"},{"c":"CUP","s":"$","n":"古巴比索"}], kw: ["古巴","cuba","cu","cub","+53","53","cuc","cup","Cuban convertible peso","古巴比索"] },
+  { a2: "CV", a3: "CPV", n3: "132", en: "Cape Verde", off: "佛得角共和国", cn: "佛得角", flag: "🇨🇻", reg: "非洲", cap: "Praia", tel: "+238", tld: ".cv", tz: ["Atlantic/Cape_Verde"], lang: "Portuguese", cur: [{"c":"CVE","s":"Esc","n":"Cape Verdean escudo"}], kw: ["佛得角","cape verde","cv","cpv","+238","238","cve","Cape Verdean escudo"] },
+  { a2: "CW", a3: "CUW", n3: "531", en: "Curaçao", off: "库拉索", cn: "库拉索", flag: "🇨🇼", reg: "北美洲", cap: "Willemstad", tel: "+599", tld: ".cw", tz: ["America/Puerto_Rico","America/Curacao"], lang: "English / Dutch / Papiamento", cur: [{"c":"ANG","s":"ƒ","n":"荷属安的列斯盾"}], kw: ["库拉索","curaçao","cw","cuw","+599","599","ang","荷属安的列斯盾"] },
+  { a2: "CX", a3: "CXR", n3: "162", en: "Christmas Island", off: "圣诞岛", cn: "圣诞岛", flag: "🇨🇽", reg: "大洋洲", cap: "Flying Fish Cove", tel: "+61", tld: ".cx", tz: ["Asia/Bangkok","Indian/Christmas"], lang: "English", cur: [{"c":"AUD","s":"$","n":"澳元"}], kw: ["圣诞岛","christmas island","cx","cxr","+61","61","aud","澳元"] },
+  { a2: "CY", a3: "CYP", n3: "196", en: "Cyprus", off: "塞浦路斯共和国", cn: "塞浦路斯", flag: "🇨🇾", reg: "欧洲", cap: "Nicosia", tel: "+357", tld: ".cy", tz: ["Asia/Nicosia","Asia/Famagusta"], lang: "Greek / Turkish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["塞浦路斯","cyprus","cy","cyp","+357","357","eur","欧元"] },
+  { a2: "CZ", a3: "CZE", n3: "203", en: "Czechia", off: "捷克共和国", cn: "捷克", flag: "🇨🇿", reg: "欧洲", cap: "Prague", tel: "+420", tld: ".cz", tz: ["Europe/Prague"], lang: "Czech / Slovak", cur: [{"c":"CZK","s":"Kč","n":"捷克克朗"}], kw: ["捷克","czechia","cz","cze","+420","420","czk","捷克克朗","czech"] },
+  { a2: "DE", a3: "DEU", n3: "276", en: "Germany", off: "德意志联邦共和国", cn: "德国", flag: "🇩🇪", reg: "欧洲", cap: "Berlin", tel: "+49", tld: ".de", tz: ["Europe/Zurich","Europe/Berlin","Europe/Busingen"], lang: "German", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["德国","germany","de","deu","+49","49","eur","欧元","德意志"] },
+  { a2: "DJ", a3: "DJI", n3: "262", en: "Djibouti", off: "吉布提共和国", cn: "吉布提", flag: "🇩🇯", reg: "非洲", cap: "Djibouti", tel: "+253", tld: ".dj", tz: ["Africa/Nairobi","Africa/Djibouti"], lang: "Arabic / French", cur: [{"c":"DJF","s":"Fr","n":"Djiboutian franc"}], kw: ["吉布提","djibouti","dj","dji","+253","253","djf","Djiboutian franc"] },
+  { a2: "DK", a3: "DNK", n3: "208", en: "Denmark", off: "丹麦王国", cn: "丹麦", flag: "🇩🇰", reg: "欧洲", cap: "Copenhagen", tel: "+45", tld: ".dk", tz: ["Europe/Berlin","Europe/Copenhagen"], lang: "Danish", cur: [{"c":"DKK","s":"kr","n":"丹麦克朗"}], kw: ["丹麦","denmark","dk","dnk","+45","45","dkk","丹麦克朗","童话王国"] },
+  { a2: "DM", a3: "DMA", n3: "212", en: "Dominica", off: "多米尼加共和国", cn: "多米尼加", flag: "🇩🇲", reg: "北美洲", cap: "Roseau", tel: "+1767", tld: ".dm", tz: ["America/Puerto_Rico","America/Dominica"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["多米尼加","dominica","dm","dma","+1767","1767","xcd","东加勒比元"] },
+  { a2: "DO", a3: "DOM", n3: "214", en: "Dominican Republic", off: "多明尼加共和国", cn: "多明尼加", flag: "🇩🇴", reg: "北美洲", cap: "Santo Domingo", tel: "+1", tld: ".do", tz: ["America/Santo_Domingo"], lang: "Spanish", cur: [{"c":"DOP","s":"$","n":"多米尼加比索"}], kw: ["多明尼加","dominican republic","do","dom","+1","1","dop","多米尼加比索"] },
+  { a2: "DZ", a3: "DZA", n3: "012", en: "Algeria", off: "阿尔及利亚人民民主共和国", cn: "阿尔及利亚", flag: "🇩🇿", reg: "非洲", cap: "Algiers", tel: "+213", tld: ".dz", tz: ["Africa/Algiers"], lang: "Arabic", cur: [{"c":"DZD","s":"د.ج","n":"阿尔及利亚第纳尔"}], kw: ["阿尔及利亚","algeria","dz","dza","+213","213","dzd","阿尔及利亚第纳尔"] },
+  { a2: "EC", a3: "ECU", n3: "218", en: "Ecuador", off: "厄瓜多尔共和国", cn: "厄瓜多尔", flag: "🇪🇨", reg: "南美洲", cap: "Quito", tel: "+593", tld: ".ec", tz: ["America/Guayaquil","Pacific/Galapagos"], lang: "Spanish", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["厄瓜多尔","ecuador","ec","ecu","+593","593","usd","美元"] },
+  { a2: "EE", a3: "EST", n3: "233", en: "Estonia", off: "爱沙尼亚共和国", cn: "爱沙尼亚", flag: "🇪🇪", reg: "欧洲", cap: "Tallinn", tel: "+372", tld: ".ee", tz: ["Europe/Tallinn"], lang: "Estonian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["爱沙尼亚","estonia","ee","est","+372","372","eur","欧元"] },
+  { a2: "EG", a3: "EGY", n3: "818", en: "Egypt", off: "阿拉伯埃及共和国", cn: "埃及", flag: "🇪🇬", reg: "非洲", cap: "Cairo", tel: "+20", tld: ".eg", tz: ["Africa/Cairo"], lang: "Arabic", cur: [{"c":"EGP","s":"£","n":"埃及镑"}], kw: ["埃及","egypt","eg","egy","+20","20","egp","埃及镑","金字塔"] },
+  { a2: "EH", a3: "ESH", n3: "732", en: "Western Sahara", off: "阿拉伯撒哈拉民主共和国", cn: "西撒哈拉", flag: "🇪🇭", reg: "非洲", cap: "El Aaiún", tel: "+2", tld: ".eh", tz: ["Africa/El_Aaiun"], lang: "Berber / Hassaniya / Spanish", cur: [{"c":"DZD","s":"دج","n":"阿尔及利亚第纳尔"},{"c":"MAD","s":"DH","n":"摩洛哥迪拉姆"},{"c":"MRU","s":"UM","n":"Mauritanian ouguiya"}], kw: ["西撒哈拉","western sahara","eh","esh","+2","2","dzd","mad","mru","阿尔及利亚第纳尔","摩洛哥迪拉姆","Mauritanian ouguiya"] },
+  { a2: "ER", a3: "ERI", n3: "232", en: "Eritrea", off: "厄立特里亚", cn: "厄立特里亚", flag: "🇪🇷", reg: "非洲", cap: "Asmara", tel: "+291", tld: ".er", tz: ["Africa/Nairobi","Africa/Asmara"], lang: "Arabic / English / Tigrinya", cur: [{"c":"ERN","s":"Nfk","n":"Eritrean nakfa"}], kw: ["厄立特里亚","eritrea","er","eri","+291","291","ern","Eritrean nakfa"] },
+  { a2: "ES", a3: "ESP", n3: "724", en: "Spain", off: "西班牙王国", cn: "西班牙", flag: "🇪🇸", reg: "欧洲", cap: "Madrid", tel: "+34", tld: ".es", tz: ["Europe/Madrid","Africa/Ceuta","Atlantic/Canary"], lang: "Spanish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["西班牙","spain","es","esp","+34","34","eur","欧元","板鸭"] },
+  { a2: "ET", a3: "ETH", n3: "231", en: "Ethiopia", off: "埃塞俄比亚联邦民主共和国", cn: "埃塞俄比亚", flag: "🇪🇹", reg: "非洲", cap: "Addis Ababa", tel: "+251", tld: ".et", tz: ["Africa/Nairobi","Africa/Addis_Ababa"], lang: "Amharic", cur: [{"c":"ETB","s":"Br","n":"埃塞俄比亚比尔"}], kw: ["埃塞俄比亚","ethiopia","et","eth","+251","251","etb","埃塞俄比亚比尔","埃塞"] },
+  { a2: "FI", a3: "FIN", n3: "246", en: "Finland", off: "芬兰共和国", cn: "芬兰", flag: "🇫🇮", reg: "欧洲", cap: "Helsinki", tel: "+358", tld: ".fi", tz: ["Europe/Helsinki"], lang: "Finnish / Swedish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["芬兰","finland","fi","fin","+358","358","eur","欧元","千湖之国"] },
+  { a2: "FJ", a3: "FJI", n3: "242", en: "Fiji", off: "斐济共和国", cn: "斐济", flag: "🇫🇯", reg: "大洋洲", cap: "Suva", tel: "+679", tld: ".fj", tz: ["Pacific/Fiji"], lang: "English / Fijian / Fiji Hindi", cur: [{"c":"FJD","s":"$","n":"斐济元"}], kw: ["斐济","fiji","fj","fji","+679","679","fjd","斐济元"] },
+  { a2: "FK", a3: "FLK", n3: "238", en: "Falkland Islands", off: "福克兰群岛", cn: "福克兰群岛", flag: "🇫🇰", reg: "南美洲", cap: "Stanley", tel: "+500", tld: ".fk", tz: ["Atlantic/Stanley"], lang: "English", cur: [{"c":"FKP","s":"£","n":"福克兰群岛镑"}], kw: ["福克兰群岛","falkland islands","fk","flk","+500","500","fkp","福克兰群岛镑"] },
+  { a2: "FM", a3: "FSM", n3: "583", en: "Micronesia", off: "密克罗尼西亚联邦", cn: "密克罗尼西亚", flag: "🇫🇲", reg: "大洋洲", cap: "Palikir", tel: "+691", tld: ".fm", tz: ["Pacific/Kosrae","Pacific/Port_Moresby","Pacific/Guadalcanal","Pacific/Chuuk","Pacific/Pohnpei"], lang: "English", cur: [], kw: ["密克罗尼西亚","micronesia","fm","fsm","+691","691"] },
+  { a2: "FO", a3: "FRO", n3: "234", en: "Faroe Islands", off: "法罗群岛", cn: "法罗群岛", flag: "🇫🇴", reg: "欧洲", cap: "Tórshavn", tel: "+298", tld: ".fo", tz: ["Atlantic/Faroe"], lang: "Danish / Faroese", cur: [{"c":"DKK","s":"kr","n":"丹麦克朗"},{"c":"FOK","s":"kr","n":"Faroese króna"}], kw: ["法罗群岛","faroe islands","fo","fro","+298","298","dkk","fok","丹麦克朗","Faroese króna"] },
+  { a2: "FR", a3: "FRA", n3: "250", en: "France", off: "法兰西共和国", cn: "法国", flag: "🇫🇷", reg: "欧洲", cap: "Paris", tel: "+33", tld: ".fr", tz: ["Europe/Paris"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["法国","france","fr","fra","+33","33","eur","欧元","法兰西","高卢"] },
+  { a2: "GA", a3: "GAB", n3: "266", en: "Gabon", off: "加蓬共和国", cn: "加蓬", flag: "🇬🇦", reg: "非洲", cap: "Libreville", tel: "+241", tld: ".ga", tz: ["Africa/Lagos","Africa/Libreville"], lang: "French", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["加蓬","gabon","ga","gab","+241","241","xaf","中非法郎"] },
+  { a2: "GB", a3: "GBR", n3: "826", en: "United Kingdom", off: "大不列颠及北爱尔兰联合王国", cn: "英国", flag: "🇬🇧", reg: "欧洲", cap: "London", tel: "+44", tld: ".uk", tz: ["Europe/London"], lang: "English", cur: [{"c":"GBP","s":"£","n":"英镑"}], kw: ["英国","united kingdom","gb","gbr","+44","44","gbp","英镑","uk","britain","england","英格兰","大不列颠","英吉利","联合王国"] },
+  { a2: "GD", a3: "GRD", n3: "308", en: "Grenada", off: "格林纳达", cn: "格林纳达", flag: "🇬🇩", reg: "北美洲", cap: "St. George's", tel: "+1473", tld: ".gd", tz: ["America/Puerto_Rico","America/Grenada"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["格林纳达","grenada","gd","grd","+1473","1473","xcd","东加勒比元"] },
+  { a2: "GE", a3: "GEO", n3: "268", en: "Georgia", off: "格鲁吉亚", cn: "格鲁吉亚", flag: "🇬🇪", reg: "亚洲", cap: "Tbilisi", tel: "+995", tld: ".ge", tz: ["Asia/Tbilisi"], lang: "Georgian", cur: [{"c":"GEL","s":"₾","n":"格鲁吉亚拉里"}], kw: ["格鲁吉亚","georgia","ge","geo","+995","995","gel","格鲁吉亚拉里"] },
+  { a2: "GF", a3: "GUF", n3: "254", en: "French Guiana", off: "法属圭亚那", cn: "法属圭亚那", flag: "🇬🇫", reg: "南美洲", cap: "Cayenne", tel: "+594", tld: ".gf", tz: ["America/Cayenne"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["法属圭亚那","french guiana","gf","guf","+594","594","eur","欧元"] },
+  { a2: "GG", a3: "GGY", n3: "831", en: "Guernsey", off: "根西岛", cn: "根西岛", flag: "🇬🇬", reg: "欧洲", cap: "St. Peter Port", tel: "+44", tld: ".gg", tz: ["Europe/London","Europe/Guernsey"], lang: "English / French / Guernésiais", cur: [{"c":"GBP","s":"£","n":"英镑"},{"c":"GGP","s":"£","n":"根西镑"}], kw: ["根西岛","guernsey","gg","ggy","+44","44","gbp","ggp","英镑","根西镑"] },
+  { a2: "GH", a3: "GHA", n3: "288", en: "Ghana", off: "加纳共和国", cn: "加纳", flag: "🇬🇭", reg: "非洲", cap: "Accra", tel: "+233", tld: ".gh", tz: ["Africa/Abidjan","Africa/Accra"], lang: "English", cur: [{"c":"GHS","s":"₵","n":"加纳塞地"}], kw: ["加纳","ghana","gh","gha","+233","233","ghs","加纳塞地"] },
+  { a2: "GI", a3: "GIB", n3: "292", en: "Gibraltar", off: "直布罗陀", cn: "直布罗陀", flag: "🇬🇮", reg: "欧洲", cap: "Gibraltar", tel: "+350", tld: ".gi", tz: ["Europe/Gibraltar"], lang: "English", cur: [{"c":"GIP","s":"£","n":"直布罗陀镑"}], kw: ["直布罗陀","gibraltar","gi","gib","+350","350","gip","直布罗陀镑"] },
+  { a2: "GL", a3: "GRL", n3: "304", en: "Greenland", off: "格陵兰", cn: "格陵兰", flag: "🇬🇱", reg: "北美洲", cap: "Nuuk", tel: "+299", tld: ".gl", tz: ["America/Nuuk","America/Danmarkshavn","America/Scoresbysund","America/Thule"], lang: "Greenlandic", cur: [{"c":"DKK","s":"kr.","n":"丹麦克朗"}], kw: ["格陵兰","greenland","gl","grl","+299","299","dkk","丹麦克朗"] },
+  { a2: "GM", a3: "GMB", n3: "270", en: "Gambia", off: "冈比亚共和国", cn: "冈比亚", flag: "🇬🇲", reg: "非洲", cap: "Banjul", tel: "+220", tld: ".gm", tz: ["Africa/Abidjan","Africa/Banjul"], lang: "English", cur: [{"c":"GMD","s":"D","n":"dalasi"}], kw: ["冈比亚","gambia","gm","gmb","+220","220","gmd","dalasi"] },
+  { a2: "GN", a3: "GIN", n3: "324", en: "Guinea", off: "几内亚共和国", cn: "几内亚", flag: "🇬🇳", reg: "非洲", cap: "Conakry", tel: "+224", tld: ".gn", tz: ["Africa/Abidjan","Africa/Conakry"], lang: "French", cur: [{"c":"GNF","s":"Fr","n":"Guinean franc"}], kw: ["几内亚","guinea","gn","gin","+224","224","gnf","Guinean franc"] },
+  { a2: "GP", a3: "GLP", n3: "312", en: "Guadeloupe", off: "瓜德罗普岛", cn: "瓜德罗普岛", flag: "🇬🇵", reg: "北美洲", cap: "Basse-Terre", tel: "+590", tld: ".gp", tz: ["America/Puerto_Rico","America/Guadeloupe"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["瓜德罗普岛","guadeloupe","gp","glp","+590","590","eur","欧元"] },
+  { a2: "GQ", a3: "GNQ", n3: "226", en: "Equatorial Guinea", off: "赤道几内亚共和国", cn: "赤道几内亚", flag: "🇬🇶", reg: "非洲", cap: "Malabo", tel: "+240", tld: ".gq", tz: ["Africa/Lagos","Africa/Malabo"], lang: "French / Portuguese / Spanish", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["赤道几内亚","equatorial guinea","gq","gnq","+240","240","xaf","中非法郎"] },
+  { a2: "GR", a3: "GRC", n3: "300", en: "Greece", off: "希腊共和国", cn: "希腊", flag: "🇬🇷", reg: "欧洲", cap: "Athens", tel: "+30", tld: ".gr", tz: ["Europe/Athens"], lang: "Greek", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["希腊","greece","gr","grc","+30","30","eur","欧元"] },
+  { a2: "GS", a3: "SGS", n3: "239", en: "South Georgia", off: "南乔治亚岛和南桑威奇群岛", cn: "南乔治亚", flag: "🇬🇸", reg: "南极洲", cap: "King Edward Point", tel: "+500", tld: ".gs", tz: ["Atlantic/South_Georgia"], lang: "English", cur: [{"c":"SHP","s":"£","n":"圣赫勒拿镑"}], kw: ["南乔治亚","south georgia","gs","sgs","+500","500","shp","圣赫勒拿镑"] },
+  { a2: "GT", a3: "GTM", n3: "320", en: "Guatemala", off: "危地马拉共和国", cn: "危地马拉", flag: "🇬🇹", reg: "北美洲", cap: "Guatemala City", tel: "+502", tld: ".gt", tz: ["America/Guatemala"], lang: "Spanish", cur: [{"c":"GTQ","s":"Q","n":"危地马拉格查尔"}], kw: ["危地马拉","guatemala","gt","gtm","+502","502","gtq","危地马拉格查尔"] },
+  { a2: "GU", a3: "GUM", n3: "316", en: "Guam", off: "关岛", cn: "关岛", flag: "🇬🇺", reg: "大洋洲", cap: "Hagåtña", tel: "+1671", tld: ".gu", tz: ["Pacific/Guam"], lang: "Chamorro / English / Spanish", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["关岛","guam","gu","gum","+1671","1671","usd","美元"] },
+  { a2: "GW", a3: "GNB", n3: "624", en: "Guinea-Bissau", off: "几内亚比绍共和国", cn: "几内亚比绍", flag: "🇬🇼", reg: "非洲", cap: "Bissau", tel: "+245", tld: ".gw", tz: ["Africa/Bissau"], lang: "Portuguese / Upper Guinea Creole", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["几内亚比绍","guinea-bissau","gw","gnb","+245","245","xof","西非法郎"] },
+  { a2: "GY", a3: "GUY", n3: "328", en: "Guyana", off: "圭亚那共和国", cn: "圭亚那", flag: "🇬🇾", reg: "南美洲", cap: "Georgetown", tel: "+592", tld: ".gy", tz: ["America/Guyana"], lang: "English", cur: [{"c":"GYD","s":"$","n":"圭亚那元"}], kw: ["圭亚那","guyana","gy","guy","+592","592","gyd","圭亚那元"] },
+  { a2: "HK", a3: "HKG", n3: "344", en: "Hong Kong", off: "中华人民共和国香港特别行政区", cn: "香港", flag: "🇭🇰", reg: "亚洲", cap: "City of Victoria", tel: "+852", tld: ".hk", tz: ["Asia/Hong_Kong"], lang: "English / Chinese", cur: [{"c":"HKD","s":"$","n":"港币"}], kw: ["香港","hong kong","hk","hkg","+852","852","hkd","港币","hongkong","香港特区","香港特别行政区"] },
+  { a2: "HM", a3: "HMD", n3: "334", en: "Heard Island and McDonald Islands", off: "赫德岛和麦当劳群岛", cn: "赫德岛和麦当劳群岛", flag: "🇭🇲", reg: "南极洲", cap: "", tel: "", tld: ".hm", tz: [], lang: "English", cur: [], kw: ["赫德岛和麦当劳群岛","heard island and mcdonald islands","hm","hmd"] },
+  { a2: "HN", a3: "HND", n3: "340", en: "Honduras", off: "洪都拉斯共和国", cn: "洪都拉斯", flag: "🇭🇳", reg: "北美洲", cap: "Tegucigalpa", tel: "+504", tld: ".hn", tz: ["America/Tegucigalpa"], lang: "Spanish", cur: [{"c":"HNL","s":"L","n":"洪都拉斯伦皮拉"}], kw: ["洪都拉斯","honduras","hn","hnd","+504","504","hnl","洪都拉斯伦皮拉"] },
+  { a2: "HR", a3: "HRV", n3: "191", en: "Croatia", off: "克罗地亚共和国", cn: "克罗地亚", flag: "🇭🇷", reg: "欧洲", cap: "Zagreb", tel: "+385", tld: ".hr", tz: ["Europe/Belgrade","Europe/Zagreb"], lang: "Croatian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["克罗地亚","croatia","hr","hrv","+385","385","eur","欧元"] },
+  { a2: "HT", a3: "HTI", n3: "332", en: "Haiti", off: "海地共和国", cn: "海地", flag: "🇭🇹", reg: "北美洲", cap: "Port-au-Prince", tel: "+509", tld: ".ht", tz: ["America/Port-au-Prince"], lang: "French / Haitian Creole", cur: [{"c":"HTG","s":"G","n":"Haitian gourde"}], kw: ["海地","haiti","ht","hti","+509","509","htg","Haitian gourde"] },
+  { a2: "HU", a3: "HUN", n3: "348", en: "Hungary", off: "匈牙利", cn: "匈牙利", flag: "🇭🇺", reg: "欧洲", cap: "Budapest", tel: "+36", tld: ".hu", tz: ["Europe/Budapest"], lang: "Hungarian", cur: [{"c":"HUF","s":"Ft","n":"匈牙利福林"}], kw: ["匈牙利","hungary","hu","hun","+36","36","huf","匈牙利福林"] },
+  { a2: "ID", a3: "IDN", n3: "360", en: "Indonesia", off: "印度尼西亚共和国", cn: "印度尼西亚", flag: "🇮🇩", reg: "亚洲", cap: "Jakarta", tel: "+62", tld: ".id", tz: ["Asia/Jakarta","Asia/Pontianak","Asia/Makassar","Asia/Jayapura"], lang: "Indonesian", cur: [{"c":"IDR","s":"Rp","n":"印尼盾"}], kw: ["印度尼西亚","indonesia","id","idn","+62","62","idr","印尼盾","印尼","千岛之国"] },
+  { a2: "IE", a3: "IRL", n3: "372", en: "Ireland", off: "爱尔兰共和国", cn: "爱尔兰", flag: "🇮🇪", reg: "欧洲", cap: "Dublin", tel: "+353", tld: ".ie", tz: ["Europe/Dublin"], lang: "English / Irish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["爱尔兰","ireland","ie","irl","+353","353","eur","欧元"] },
+  { a2: "IL", a3: "ISR", n3: "376", en: "Israel", off: "以色列国", cn: "以色列", flag: "🇮🇱", reg: "亚洲", cap: "Jerusalem", tel: "+972", tld: ".il", tz: ["Asia/Jerusalem"], lang: "Arabic / Hebrew", cur: [{"c":"ILS","s":"₪","n":"以色列新谢克尔"}], kw: ["以色列","israel","il","isr","+972","972","ils","以色列新谢克尔"] },
+  { a2: "IM", a3: "IMN", n3: "833", en: "Isle of Man", off: "马恩岛", cn: "马恩岛", flag: "🇮🇲", reg: "欧洲", cap: "Douglas", tel: "+44", tld: ".im", tz: ["Europe/London","Europe/Isle_of_Man"], lang: "English / Manx", cur: [{"c":"GBP","s":"£","n":"英镑"},{"c":"IMP","s":"£","n":"马恩岛镑"}], kw: ["马恩岛","isle of man","im","imn","+44","44","gbp","imp","英镑","马恩岛镑"] },
+  { a2: "IN", a3: "IND", n3: "356", en: "India", off: "印度共和国", cn: "印度", flag: "🇮🇳", reg: "亚洲", cap: "New Delhi", tel: "+91", tld: ".in", tz: ["Asia/Kolkata"], lang: "English / Hindi / Tamil", cur: [{"c":"INR","s":"₹","n":"印度卢比"}], kw: ["印度","india","in","ind","+91","91","inr","印度卢比","阿三"] },
+  { a2: "IO", a3: "IOT", n3: "086", en: "British Indian Ocean Territory", off: "英属印度洋领地", cn: "英属印度洋领地", flag: "🇮🇴", reg: "非洲", cap: "Diego Garcia", tel: "+246", tld: ".io", tz: ["Indian/Chagos"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["英属印度洋领地","british indian ocean territory","io","iot","+246","246","usd","美元"] },
+  { a2: "IQ", a3: "IRQ", n3: "368", en: "Iraq", off: "伊拉克共和国", cn: "伊拉克", flag: "🇮🇶", reg: "亚洲", cap: "Baghdad", tel: "+964", tld: ".iq", tz: ["Asia/Baghdad"], lang: "Arabic / Aramaic / Sorani", cur: [{"c":"IQD","s":"ع.د","n":"伊拉克第纳尔"}], kw: ["伊拉克","iraq","iq","irq","+964","964","iqd","伊拉克第纳尔"] },
+  { a2: "IR", a3: "IRN", n3: "364", en: "Iran", off: "伊朗伊斯兰共和国", cn: "伊朗", flag: "🇮🇷", reg: "亚洲", cap: "Tehran", tel: "+98", tld: ".ir", tz: ["Asia/Tehran"], lang: "Persian (Farsi)", cur: [{"c":"IRR","s":"﷼","n":"伊朗里亚尔"}], kw: ["伊朗","iran","ir","irn","+98","98","irr","伊朗里亚尔","波斯"] },
+  { a2: "IS", a3: "ISL", n3: "352", en: "Iceland", off: "冰岛", cn: "冰岛", flag: "🇮🇸", reg: "欧洲", cap: "Reykjavik", tel: "+354", tld: ".is", tz: ["Africa/Abidjan","Atlantic/Reykjavik"], lang: "Icelandic", cur: [{"c":"ISK","s":"kr","n":"冰岛克朗"}], kw: ["冰岛","iceland","is","isl","+354","354","isk","冰岛克朗"] },
+  { a2: "IT", a3: "ITA", n3: "380", en: "Italy", off: "意大利共和国", cn: "意大利", flag: "🇮🇹", reg: "欧洲", cap: "Rome", tel: "+39", tld: ".it", tz: ["Europe/Rome"], lang: "Italian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["意大利","italy","it","ita","+39","39","eur","欧元","意呆利"] },
+  { a2: "JE", a3: "JEY", n3: "832", en: "Jersey", off: "泽西岛", cn: "泽西岛", flag: "🇯🇪", reg: "欧洲", cap: "Saint Helier", tel: "+44", tld: ".je", tz: ["Europe/London","Europe/Jersey"], lang: "English / French / Jèrriais", cur: [{"c":"GBP","s":"£","n":"英镑"},{"c":"JEP","s":"£","n":"泽西镑"}], kw: ["泽西岛","jersey","je","jey","+44","44","gbp","jep","英镑","泽西镑"] },
+  { a2: "JM", a3: "JAM", n3: "388", en: "Jamaica", off: "牙买加", cn: "牙买加", flag: "🇯🇲", reg: "北美洲", cap: "Kingston", tel: "+1876", tld: ".jm", tz: ["America/Jamaica"], lang: "English / Jamaican Patois", cur: [{"c":"JMD","s":"$","n":"牙买加元"}], kw: ["牙买加","jamaica","jm","jam","+1876","1876","jmd","牙买加元"] },
+  { a2: "JO", a3: "JOR", n3: "400", en: "Jordan", off: "约旦哈希姆王国", cn: "约旦", flag: "🇯🇴", reg: "亚洲", cap: "Amman", tel: "+962", tld: ".jo", tz: ["Asia/Amman"], lang: "Arabic", cur: [{"c":"JOD","s":"د.ا","n":"约旦第纳尔"}], kw: ["约旦","jordan","jo","jor","+962","962","jod","约旦第纳尔"] },
+  { a2: "JP", a3: "JPN", n3: "392", en: "Japan", off: "日本国", cn: "日本", flag: "🇯🇵", reg: "亚洲", cap: "Tokyo", tel: "+81", tld: ".jp", tz: ["Asia/Tokyo"], lang: "Japanese", cur: [{"c":"JPY","s":"¥","n":"日元"}], kw: ["日本","japan","jp","jpn","+81","81","jpy","日元","霓虹","岛国"] },
+  { a2: "KE", a3: "KEN", n3: "404", en: "Kenya", off: "肯尼亚共和国", cn: "肯尼亚", flag: "🇰🇪", reg: "非洲", cap: "Nairobi", tel: "+254", tld: ".ke", tz: ["Africa/Nairobi"], lang: "English / Swahili", cur: [{"c":"KES","s":"Sh","n":"肯尼亚先令"}], kw: ["肯尼亚","kenya","ke","ken","+254","254","kes","肯尼亚先令"] },
+  { a2: "KG", a3: "KGZ", n3: "417", en: "Kyrgyzstan", off: "吉尔吉斯斯坦共和国", cn: "吉尔吉斯斯坦", flag: "🇰🇬", reg: "亚洲", cap: "Bishkek", tel: "+996", tld: ".kg", tz: ["Asia/Bishkek"], lang: "Kyrgyz / Russian", cur: [{"c":"KGS","s":"с","n":"Kyrgyzstani som"}], kw: ["吉尔吉斯斯坦","kyrgyzstan","kg","kgz","+996","996","kgs","Kyrgyzstani som"] },
+  { a2: "KH", a3: "KHM", n3: "116", en: "Cambodia", off: "柬埔寨王国", cn: "柬埔寨", flag: "🇰🇭", reg: "亚洲", cap: "Phnom Penh", tel: "+855", tld: ".kh", tz: ["Asia/Bangkok","Asia/Phnom_Penh"], lang: "Khmer", cur: [{"c":"KHR","s":"៛","n":"柬埔寨瑞尔"},{"c":"USD","s":"$","n":"美元"}], kw: ["柬埔寨","cambodia","kh","khm","+855","855","khr","usd","柬埔寨瑞尔","美元","高棉"] },
+  { a2: "KI", a3: "KIR", n3: "296", en: "Kiribati", off: "基里巴斯共和国", cn: "基里巴斯", flag: "🇰🇮", reg: "大洋洲", cap: "South Tarawa", tel: "+686", tld: ".ki", tz: ["Pacific/Tarawa","Pacific/Kanton","Pacific/Kiritimati"], lang: "English / Gilbertese", cur: [{"c":"AUD","s":"$","n":"澳元"},{"c":"KID","s":"$","n":"Kiribati dollar"}], kw: ["基里巴斯","kiribati","ki","kir","+686","686","aud","kid","澳元","Kiribati dollar"] },
+  { a2: "KM", a3: "COM", n3: "174", en: "Comoros", off: "科摩罗联盟", cn: "科摩罗", flag: "🇰🇲", reg: "非洲", cap: "Moroni", tel: "+269", tld: ".km", tz: ["Africa/Nairobi","Indian/Comoro"], lang: "Arabic / French / Comorian", cur: [{"c":"KMF","s":"Fr","n":"Comorian franc"}], kw: ["科摩罗","comoros","km","com","+269","269","kmf","Comorian franc"] },
+  { a2: "KN", a3: "KNA", n3: "659", en: "Saint Kitts and Nevis", off: "圣克里斯托弗和尼维斯联邦", cn: "圣基茨和尼维斯", flag: "🇰🇳", reg: "北美洲", cap: "Basseterre", tel: "+1869", tld: ".kn", tz: ["America/Puerto_Rico","America/St_Kitts"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["圣基茨和尼维斯","saint kitts and nevis","kn","kna","+1869","1869","xcd","东加勒比元"] },
+  { a2: "KP", a3: "PRK", n3: "408", en: "North Korea", off: "朝鲜人民民主共和国", cn: "朝鲜", flag: "🇰🇵", reg: "亚洲", cap: "Pyongyang", tel: "+850", tld: ".kp", tz: ["Asia/Pyongyang"], lang: "Korean", cur: [{"c":"KPW","s":"₩","n":"朝鲜圆"}], kw: ["朝鲜","north korea","kp","prk","+850","850","kpw","朝鲜圆","北朝鲜","朝鲜民主主义人民共和国"] },
+  { a2: "KR", a3: "KOR", n3: "410", en: "South Korea", off: "大韩民国", cn: "韩国", flag: "🇰🇷", reg: "亚洲", cap: "Seoul", tel: "+82", tld: ".kr", tz: ["Asia/Seoul"], lang: "Korean", cur: [{"c":"KRW","s":"₩","n":"韩元"}], kw: ["韩国","south korea","kr","kor","+82","82","krw","韩元","korea","南韩","大韩民国"] },
+  { a2: "KW", a3: "KWT", n3: "414", en: "Kuwait", off: "科威特国", cn: "科威特", flag: "🇰🇼", reg: "亚洲", cap: "Kuwait City", tel: "+965", tld: ".kw", tz: ["Asia/Riyadh","Asia/Kuwait"], lang: "Arabic", cur: [{"c":"KWD","s":"د.ك","n":"科威特第纳尔"}], kw: ["科威特","kuwait","kw","kwt","+965","965","kwd","科威特第纳尔"] },
+  { a2: "KY", a3: "CYM", n3: "136", en: "Cayman Islands", off: "开曼群岛", cn: "开曼群岛", flag: "🇰🇾", reg: "北美洲", cap: "George Town", tel: "+1345", tld: ".ky", tz: ["America/Panama","America/Cayman"], lang: "English", cur: [{"c":"KYD","s":"$","n":"开曼群岛元"}], kw: ["开曼群岛","cayman islands","ky","cym","+1345","1345","kyd","开曼群岛元"] },
+  { a2: "KZ", a3: "KAZ", n3: "398", en: "Kazakhstan", off: "哈萨克斯坦共和国", cn: "哈萨克斯坦", flag: "🇰🇿", reg: "亚洲", cap: "Astana", tel: "+7", tld: ".kz", tz: ["Asia/Almaty","Asia/Qyzylorda","Asia/Qostanay","Asia/Aqtobe","Asia/Aqtau","Asia/Atyrau","Asia/Oral"], lang: "Kazakh / Russian", cur: [{"c":"KZT","s":"₸","n":"哈萨克斯坦坚戈"}], kw: ["哈萨克斯坦","kazakhstan","kz","kaz","+7","7","kzt","哈萨克斯坦坚戈","哈萨克"] },
+  { a2: "LA", a3: "LAO", n3: "418", en: "Laos", off: "老挝人民民主共和国", cn: "老挝", flag: "🇱🇦", reg: "亚洲", cap: "Vientiane", tel: "+856", tld: ".la", tz: ["Asia/Bangkok","Asia/Vientiane"], lang: "Lao", cur: [{"c":"LAK","s":"₭","n":"老挝基普"}], kw: ["老挝","laos","la","lao","+856","856","lak","老挝基普"] },
+  { a2: "LB", a3: "LBN", n3: "422", en: "Lebanon", off: "黎巴嫩共和国", cn: "黎巴嫩", flag: "🇱🇧", reg: "亚洲", cap: "Beirut", tel: "+961", tld: ".lb", tz: ["Asia/Beirut"], lang: "Arabic / French", cur: [{"c":"LBP","s":"ل.ل","n":"黎巴嫩镑"}], kw: ["黎巴嫩","lebanon","lb","lbn","+961","961","lbp","黎巴嫩镑"] },
+  { a2: "LC", a3: "LCA", n3: "662", en: "Saint Lucia", off: "圣卢西亚", cn: "圣卢西亚", flag: "🇱🇨", reg: "北美洲", cap: "Castries", tel: "+1758", tld: ".lc", tz: ["America/Puerto_Rico","America/St_Lucia"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["圣卢西亚","saint lucia","lc","lca","+1758","1758","xcd","东加勒比元"] },
+  { a2: "LI", a3: "LIE", n3: "438", en: "Liechtenstein", off: "列支敦士登公国", cn: "列支敦士登", flag: "🇱🇮", reg: "欧洲", cap: "Vaduz", tel: "+423", tld: ".li", tz: ["Europe/Zurich","Europe/Vaduz"], lang: "German", cur: [{"c":"CHF","s":"Fr","n":"瑞士法郎"}], kw: ["列支敦士登","liechtenstein","li","lie","+423","423","chf","瑞士法郎"] },
+  { a2: "LK", a3: "LKA", n3: "144", en: "Sri Lanka", off: "斯里兰卡民主社会主义共和国", cn: "斯里兰卡", flag: "🇱🇰", reg: "亚洲", cap: "Colombo", tel: "+94", tld: ".lk", tz: ["Asia/Colombo"], lang: "Sinhala / Tamil", cur: [{"c":"LKR","s":"Rs රු","n":"斯里兰卡卢比"}], kw: ["斯里兰卡","sri lanka","lk","lka","+94","94","lkr","斯里兰卡卢比","锡兰"] },
+  { a2: "LR", a3: "LBR", n3: "430", en: "Liberia", off: "利比里亚共和国", cn: "利比里亚", flag: "🇱🇷", reg: "非洲", cap: "Monrovia", tel: "+231", tld: ".lr", tz: ["Africa/Monrovia"], lang: "English", cur: [{"c":"LRD","s":"$","n":"Liberian dollar"}], kw: ["利比里亚","liberia","lr","lbr","+231","231","lrd","Liberian dollar"] },
+  { a2: "LS", a3: "LSO", n3: "426", en: "Lesotho", off: "莱索托王国", cn: "莱索托", flag: "🇱🇸", reg: "非洲", cap: "Maseru", tel: "+266", tld: ".ls", tz: ["Africa/Johannesburg","Africa/Maseru"], lang: "English / Sotho", cur: [{"c":"LSL","s":"L","n":"Lesotho loti"},{"c":"ZAR","s":"R","n":"南非兰特"}], kw: ["莱索托","lesotho","ls","lso","+266","266","lsl","zar","Lesotho loti","南非兰特"] },
+  { a2: "LT", a3: "LTU", n3: "440", en: "Lithuania", off: "立陶宛共和国", cn: "立陶宛", flag: "🇱🇹", reg: "欧洲", cap: "Vilnius", tel: "+370", tld: ".lt", tz: ["Europe/Vilnius"], lang: "Lithuanian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["立陶宛","lithuania","lt","ltu","+370","370","eur","欧元"] },
+  { a2: "LU", a3: "LUX", n3: "442", en: "Luxembourg", off: "卢森堡大公国", cn: "卢森堡", flag: "🇱🇺", reg: "欧洲", cap: "Luxembourg", tel: "+352", tld: ".lu", tz: ["Europe/Brussels","Europe/Luxembourg"], lang: "German / French / Luxembourgish", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["卢森堡","luxembourg","lu","lux","+352","352","eur","欧元"] },
+  { a2: "LV", a3: "LVA", n3: "428", en: "Latvia", off: "拉脱维亚共和国", cn: "拉脱维亚", flag: "🇱🇻", reg: "欧洲", cap: "Riga", tel: "+371", tld: ".lv", tz: ["Europe/Riga"], lang: "Latvian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["拉脱维亚","latvia","lv","lva","+371","371","eur","欧元"] },
+  { a2: "LY", a3: "LBY", n3: "434", en: "Libya", off: "利比亚国", cn: "利比亚", flag: "🇱🇾", reg: "非洲", cap: "Tripoli", tel: "+218", tld: ".ly", tz: ["Africa/Tripoli"], lang: "Arabic", cur: [{"c":"LYD","s":"ل.د","n":"利比亚第纳尔"}], kw: ["利比亚","libya","ly","lby","+218","218","lyd","利比亚第纳尔"] },
+  { a2: "MA", a3: "MAR", n3: "504", en: "Morocco", off: "摩洛哥王国", cn: "摩洛哥", flag: "🇲🇦", reg: "非洲", cap: "Rabat", tel: "+212", tld: ".ma", tz: ["Africa/Casablanca"], lang: "Arabic / Berber", cur: [{"c":"MAD","s":"د.م.","n":"摩洛哥迪拉姆"}], kw: ["摩洛哥","morocco","ma","mar","+212","212","mad","摩洛哥迪拉姆"] },
+  { a2: "MC", a3: "MCO", n3: "492", en: "Monaco", off: "摩纳哥公国", cn: "摩纳哥", flag: "🇲🇨", reg: "欧洲", cap: "Monaco", tel: "+377", tld: ".mc", tz: ["Europe/Paris","Europe/Monaco"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["摩纳哥","monaco","mc","mco","+377","377","eur","欧元"] },
+  { a2: "MD", a3: "MDA", n3: "498", en: "Moldova", off: "摩尔多瓦共和国", cn: "摩尔多瓦", flag: "🇲🇩", reg: "欧洲", cap: "Chișinău", tel: "+373", tld: ".md", tz: ["Europe/Chisinau"], lang: "Moldavian", cur: [{"c":"MDL","s":"L","n":"Moldovan leu"}], kw: ["摩尔多瓦","moldova","md","mda","+373","373","mdl","Moldovan leu"] },
+  { a2: "ME", a3: "MNE", n3: "499", en: "Montenegro", off: "黑山", cn: "黑山", flag: "🇲🇪", reg: "欧洲", cap: "Podgorica", tel: "+382", tld: ".me", tz: ["Europe/Belgrade","Europe/Podgorica"], lang: "Montenegrin", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["黑山","montenegro","me","mne","+382","382","eur","欧元"] },
+  { a2: "MF", a3: "MAF", n3: "663", en: "Saint Martin", off: "圣马丁", cn: "圣马丁", flag: "🇲🇫", reg: "北美洲", cap: "Marigot", tel: "+590", tld: ".fr", tz: ["America/Puerto_Rico","America/Marigot"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["圣马丁","saint martin","mf","maf","+590","590","eur","欧元"] },
+  { a2: "MG", a3: "MDG", n3: "450", en: "Madagascar", off: "马达加斯加共和国", cn: "马达加斯加", flag: "🇲🇬", reg: "非洲", cap: "Antananarivo", tel: "+261", tld: ".mg", tz: ["Africa/Nairobi","Indian/Antananarivo"], lang: "French / Malagasy", cur: [{"c":"MGA","s":"Ar","n":"Malagasy ariary"}], kw: ["马达加斯加","madagascar","mg","mdg","+261","261","mga","Malagasy ariary"] },
+  { a2: "MH", a3: "MHL", n3: "584", en: "Marshall Islands", off: "马绍尔群岛共和国", cn: "马绍尔群岛", flag: "🇲🇭", reg: "大洋洲", cap: "Majuro", tel: "+692", tld: ".mh", tz: ["Pacific/Tarawa","Pacific/Kwajalein","Pacific/Majuro"], lang: "English / Marshallese", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["马绍尔群岛","marshall islands","mh","mhl","+692","692","usd","美元"] },
+  { a2: "MK", a3: "MKD", n3: "807", en: "North Macedonia", off: "北馬其頓共和國", cn: "北馬其頓", flag: "🇲🇰", reg: "欧洲", cap: "Skopje", tel: "+389", tld: ".mk", tz: ["Europe/Belgrade","Europe/Skopje"], lang: "Macedonian", cur: [{"c":"MKD","s":"den","n":"denar"}], kw: ["北馬其頓","north macedonia","mk","mkd","+389","389","denar"] },
+  { a2: "ML", a3: "MLI", n3: "466", en: "Mali", off: "马里共和国", cn: "马里", flag: "🇲🇱", reg: "非洲", cap: "Bamako", tel: "+223", tld: ".ml", tz: ["Africa/Abidjan","Africa/Bamako"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["马里","mali","ml","mli","+223","223","xof","西非法郎"] },
+  { a2: "MM", a3: "MMR", n3: "104", en: "Myanmar", off: "缅甸联邦共和国", cn: "缅甸", flag: "🇲🇲", reg: "亚洲", cap: "Naypyidaw", tel: "+95", tld: ".mm", tz: ["Asia/Yangon"], lang: "Burmese", cur: [{"c":"MMK","s":"Ks","n":"缅元"}], kw: ["缅甸","myanmar","mm","mmr","+95","95","mmk","缅元","burma"] },
+  { a2: "MN", a3: "MNG", n3: "496", en: "Mongolia", off: "蒙古", cn: "蒙古", flag: "🇲🇳", reg: "亚洲", cap: "Ulan Bator", tel: "+976", tld: ".mn", tz: ["Asia/Ulaanbaatar","Asia/Hovd"], lang: "Mongolian", cur: [{"c":"MNT","s":"₮","n":"蒙古图格里克"}], kw: ["蒙古","mongolia","mn","mng","+976","976","mnt","蒙古图格里克","外蒙"] },
+  { a2: "MO", a3: "MAC", n3: "446", en: "Macau", off: "中华人民共和国澳门特别行政区", cn: "澳门", flag: "🇲🇴", reg: "亚洲", cap: "", tel: "+853", tld: ".mo", tz: ["Asia/Macau"], lang: "Portuguese / Chinese", cur: [{"c":"MOP","s":"P","n":"澳门元"}], kw: ["澳门","macau","mo","mac","+853","853","mop","澳门元","macao","澳门特区"] },
+  { a2: "MP", a3: "MNP", n3: "580", en: "Northern Mariana Islands", off: "北马里亚纳群岛", cn: "北马里亚纳群岛", flag: "🇲🇵", reg: "大洋洲", cap: "Saipan", tel: "+1670", tld: ".mp", tz: ["Pacific/Guam","Pacific/Saipan"], lang: "Carolinian / Chamorro / English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["北马里亚纳群岛","northern mariana islands","mp","mnp","+1670","1670","usd","美元"] },
+  { a2: "MQ", a3: "MTQ", n3: "474", en: "Martinique", off: "马提尼克", cn: "马提尼克", flag: "🇲🇶", reg: "北美洲", cap: "Fort-de-France", tel: "+596", tld: ".mq", tz: ["America/Martinique"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["马提尼克","martinique","mq","mtq","+596","596","eur","欧元"] },
+  { a2: "MR", a3: "MRT", n3: "478", en: "Mauritania", off: "毛里塔尼亚伊斯兰共和国", cn: "毛里塔尼亚", flag: "🇲🇷", reg: "非洲", cap: "Nouakchott", tel: "+222", tld: ".mr", tz: ["Africa/Abidjan","Africa/Nouakchott"], lang: "Arabic", cur: [{"c":"MRU","s":"UM","n":"Mauritanian ouguiya"}], kw: ["毛里塔尼亚","mauritania","mr","mrt","+222","222","mru","Mauritanian ouguiya"] },
+  { a2: "MS", a3: "MSR", n3: "500", en: "Montserrat", off: "蒙特塞拉特", cn: "蒙特塞拉特", flag: "🇲🇸", reg: "北美洲", cap: "Plymouth", tel: "+1664", tld: ".ms", tz: ["America/Puerto_Rico","America/Montserrat"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["蒙特塞拉特","montserrat","ms","msr","+1664","1664","xcd","东加勒比元"] },
+  { a2: "MT", a3: "MLT", n3: "470", en: "Malta", off: "马耳他共和国", cn: "马耳他", flag: "🇲🇹", reg: "欧洲", cap: "Valletta", tel: "+356", tld: ".mt", tz: ["Europe/Malta"], lang: "English / Maltese", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["马耳他","malta","mt","mlt","+356","356","eur","欧元"] },
+  { a2: "MU", a3: "MUS", n3: "480", en: "Mauritius", off: "毛里求斯共和国", cn: "毛里求斯", flag: "🇲🇺", reg: "非洲", cap: "Port Louis", tel: "+230", tld: ".mu", tz: ["Indian/Mauritius"], lang: "English / French / Mauritian Creole", cur: [{"c":"MUR","s":"₨","n":"毛里求斯卢比"}], kw: ["毛里求斯","mauritius","mu","mus","+230","230","mur","毛里求斯卢比"] },
+  { a2: "MV", a3: "MDV", n3: "462", en: "Maldives", off: "马尔代夫共和国", cn: "马尔代夫", flag: "🇲🇻", reg: "亚洲", cap: "Malé", tel: "+960", tld: ".mv", tz: ["Indian/Maldives"], lang: "Maldivian", cur: [{"c":"MVR","s":".ރ","n":"马尔代夫拉菲亚"}], kw: ["马尔代夫","maldives","mv","mdv","+960","960","mvr","马尔代夫拉菲亚","马代"] },
+  { a2: "MW", a3: "MWI", n3: "454", en: "Malawi", off: "马拉维共和国", cn: "马拉维", flag: "🇲🇼", reg: "非洲", cap: "Lilongwe", tel: "+265", tld: ".mw", tz: ["Africa/Maputo","Africa/Blantyre"], lang: "English / Chewa", cur: [{"c":"MWK","s":"MK","n":"Malawian kwacha"}], kw: ["马拉维","malawi","mw","mwi","+265","265","mwk","Malawian kwacha"] },
+  { a2: "MX", a3: "MEX", n3: "484", en: "Mexico", off: "墨西哥合众国", cn: "墨西哥", flag: "🇲🇽", reg: "北美洲", cap: "Mexico City", tel: "+52", tld: ".mx", tz: ["America/Mexico_City","America/Cancun","America/Merida","America/Monterrey","America/Matamoros","America/Chihuahua","America/Ciudad_Juarez","America/Ojinaga","America/Mazatlan","America/Bahia_Banderas","America/Hermosillo","America/Tijuana"], lang: "Spanish", cur: [{"c":"MXN","s":"$","n":"墨西哥比索"}], kw: ["墨西哥","mexico","mx","mex","+52","52","mxn","墨西哥比索"] },
+  { a2: "MY", a3: "MYS", n3: "458", en: "Malaysia", off: "马来西亚", cn: "马来西亚", flag: "🇲🇾", reg: "亚洲", cap: "Kuala Lumpur", tel: "+60", tld: ".my", tz: ["Asia/Kuching","Asia/Singapore","Asia/Kuala_Lumpur"], lang: "English / Malay", cur: [{"c":"MYR","s":"RM","n":"马来西亚林吉特"}], kw: ["马来西亚","malaysia","my","mys","+60","60","myr","马来西亚林吉特","大马"] },
+  { a2: "MZ", a3: "MOZ", n3: "508", en: "Mozambique", off: "莫桑比克共和国", cn: "莫桑比克", flag: "🇲🇿", reg: "非洲", cap: "Maputo", tel: "+258", tld: ".mz", tz: ["Africa/Maputo"], lang: "Portuguese", cur: [{"c":"MZN","s":"MT","n":"Mozambican metical"}], kw: ["莫桑比克","mozambique","mz","moz","+258","258","mzn","Mozambican metical"] },
+  { a2: "NA", a3: "NAM", n3: "516", en: "Namibia", off: "纳米比亚共和国", cn: "纳米比亚", flag: "🇳🇦", reg: "非洲", cap: "Windhoek", tel: "+264", tld: ".na", tz: ["Africa/Windhoek"], lang: "Afrikaans / German / English / Herero / Khoekhoe / Kwangali / Lozi / Ndonga / Tswana", cur: [{"c":"NAD","s":"$","n":"Namibian dollar"},{"c":"ZAR","s":"R","n":"南非兰特"}], kw: ["纳米比亚","namibia","na","nam","+264","264","nad","zar","Namibian dollar","南非兰特"] },
+  { a2: "NC", a3: "NCL", n3: "540", en: "New Caledonia", off: "新喀里多尼亚", cn: "新喀里多尼亚", flag: "🇳🇨", reg: "大洋洲", cap: "Nouméa", tel: "+687", tld: ".nc", tz: ["Pacific/Noumea"], lang: "French", cur: [{"c":"XPF","s":"₣","n":"太平洋法郎"}], kw: ["新喀里多尼亚","new caledonia","nc","ncl","+687","687","xpf","太平洋法郎"] },
+  { a2: "NE", a3: "NER", n3: "562", en: "Niger", off: "尼日尔共和国", cn: "尼日尔", flag: "🇳🇪", reg: "非洲", cap: "Niamey", tel: "+227", tld: ".ne", tz: ["Africa/Lagos","Africa/Niamey"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["尼日尔","niger","ne","ner","+227","227","xof","西非法郎"] },
+  { a2: "NF", a3: "NFK", n3: "574", en: "Norfolk Island", off: "诺福克岛", cn: "诺福克岛", flag: "🇳🇫", reg: "大洋洲", cap: "Kingston", tel: "+672", tld: ".nf", tz: ["Pacific/Norfolk"], lang: "English / Norfuk", cur: [{"c":"AUD","s":"$","n":"澳元"}], kw: ["诺福克岛","norfolk island","nf","nfk","+672","672","aud","澳元"] },
+  { a2: "NG", a3: "NGA", n3: "566", en: "Nigeria", off: "尼日利亚联邦共和国", cn: "尼日利亚", flag: "🇳🇬", reg: "非洲", cap: "Abuja", tel: "+234", tld: ".ng", tz: ["Africa/Lagos"], lang: "English", cur: [{"c":"NGN","s":"₦","n":"尼日利亚奈拉"}], kw: ["尼日利亚","nigeria","ng","nga","+234","234","ngn","尼日利亚奈拉"] },
+  { a2: "NI", a3: "NIC", n3: "558", en: "Nicaragua", off: "尼加拉瓜共和国", cn: "尼加拉瓜", flag: "🇳🇮", reg: "北美洲", cap: "Managua", tel: "+505", tld: ".ni", tz: ["America/Managua"], lang: "Spanish", cur: [{"c":"NIO","s":"C$","n":"尼加拉瓜科多巴"}], kw: ["尼加拉瓜","nicaragua","ni","nic","+505","505","nio","尼加拉瓜科多巴"] },
+  { a2: "NL", a3: "NLD", n3: "528", en: "Netherlands", off: "荷兰", cn: "荷兰", flag: "🇳🇱", reg: "欧洲", cap: "Amsterdam", tel: "+31", tld: ".nl", tz: ["Europe/Brussels","Europe/Amsterdam"], lang: "Dutch", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["荷兰","netherlands","nl","nld","+31","31","eur","欧元","holland","尼德兰","风车之国"] },
+  { a2: "NO", a3: "NOR", n3: "578", en: "Norway", off: "挪威王国", cn: "挪威", flag: "🇳🇴", reg: "欧洲", cap: "Oslo", tel: "+47", tld: ".no", tz: ["Europe/Berlin","Europe/Oslo"], lang: "Norwegian Nynorsk / Norwegian Bokmål / Sami", cur: [{"c":"NOK","s":"kr","n":"挪威克朗"}], kw: ["挪威","norway","no","nor","+47","47","nok","挪威克朗"] },
+  { a2: "NP", a3: "NPL", n3: "524", en: "Nepal", off: "尼泊尔联邦民主共和国", cn: "尼泊尔", flag: "🇳🇵", reg: "亚洲", cap: "Kathmandu", tel: "+977", tld: ".np", tz: ["Asia/Kathmandu"], lang: "Nepali", cur: [{"c":"NPR","s":"₨","n":"尼泊尔卢比"}], kw: ["尼泊尔","nepal","np","npl","+977","977","npr","尼泊尔卢比"] },
+  { a2: "NR", a3: "NRU", n3: "520", en: "Nauru", off: "瑙鲁共和国", cn: "瑙鲁", flag: "🇳🇷", reg: "大洋洲", cap: "Yaren", tel: "+674", tld: ".nr", tz: ["Pacific/Nauru"], lang: "English / Nauru", cur: [{"c":"AUD","s":"$","n":"澳元"}], kw: ["瑙鲁","nauru","nr","nru","+674","674","aud","澳元"] },
+  { a2: "NU", a3: "NIU", n3: "570", en: "Niue", off: "纽埃", cn: "纽埃", flag: "🇳🇺", reg: "大洋洲", cap: "Alofi", tel: "+683", tld: ".nu", tz: ["Pacific/Niue"], lang: "English / Niuean", cur: [{"c":"NZD","s":"$","n":"新西兰元"}], kw: ["纽埃","niue","nu","niu","+683","683","nzd","新西兰元"] },
+  { a2: "NZ", a3: "NZL", n3: "554", en: "New Zealand", off: "新西兰", cn: "新西兰", flag: "🇳🇿", reg: "大洋洲", cap: "Wellington", tel: "+64", tld: ".nz", tz: ["Pacific/Auckland","Pacific/Chatham"], lang: "English / Māori / New Zealand Sign Language", cur: [{"c":"NZD","s":"$","n":"新西兰元"}], kw: ["新西兰","new zealand","nz","nzl","+64","64","nzd","新西兰元","纽西兰"] },
+  { a2: "OM", a3: "OMN", n3: "512", en: "Oman", off: "阿曼苏丹国", cn: "阿曼", flag: "🇴🇲", reg: "亚洲", cap: "Muscat", tel: "+968", tld: ".om", tz: ["Asia/Dubai","Asia/Muscat"], lang: "Arabic", cur: [{"c":"OMR","s":"ر.ع.","n":"阿曼里亚尔"}], kw: ["阿曼","oman","om","omn","+968","968","omr","阿曼里亚尔"] },
+  { a2: "PA", a3: "PAN", n3: "591", en: "Panama", off: "巴拿马共和国", cn: "巴拿马", flag: "🇵🇦", reg: "北美洲", cap: "Panama City", tel: "+507", tld: ".pa", tz: ["America/Panama"], lang: "Spanish", cur: [{"c":"PAB","s":"B/.","n":"巴拿马巴波亚"},{"c":"USD","s":"$","n":"美元"}], kw: ["巴拿马","panama","pa","pan","+507","507","pab","usd","巴拿马巴波亚","美元"] },
+  { a2: "PE", a3: "PER", n3: "604", en: "Peru", off: "秘鲁共和国", cn: "秘鲁", flag: "🇵🇪", reg: "南美洲", cap: "Lima", tel: "+51", tld: ".pe", tz: ["America/Lima"], lang: "Aymara / Quechua / Spanish", cur: [{"c":"PEN","s":"S/.","n":"秘鲁索尔"}], kw: ["秘鲁","peru","pe","per","+51","51","pen","秘鲁索尔"] },
+  { a2: "PF", a3: "PYF", n3: "258", en: "French Polynesia", off: "法属波利尼西亚", cn: "法属波利尼西亚", flag: "🇵🇫", reg: "大洋洲", cap: "Papeetē", tel: "+689", tld: ".pf", tz: ["Pacific/Tahiti","Pacific/Marquesas","Pacific/Gambier"], lang: "French", cur: [{"c":"XPF","s":"₣","n":"太平洋法郎"}], kw: ["法属波利尼西亚","french polynesia","pf","pyf","+689","689","xpf","太平洋法郎"] },
+  { a2: "PG", a3: "PNG", n3: "598", en: "Papua New Guinea", off: "巴布亚新几内亚", cn: "巴布亚新几内亚", flag: "🇵🇬", reg: "大洋洲", cap: "Port Moresby", tel: "+675", tld: ".pg", tz: ["Pacific/Port_Moresby","Pacific/Bougainville"], lang: "English / Hiri Motu / Tok Pisin", cur: [{"c":"PGK","s":"K","n":"巴布亚新几内亚基那"}], kw: ["巴布亚新几内亚","papua new guinea","pg","png","+675","675","pgk","巴布亚新几内亚基那"] },
+  { a2: "PH", a3: "PHL", n3: "608", en: "Philippines", off: "菲律宾共和国", cn: "菲律宾", flag: "🇵🇭", reg: "亚洲", cap: "Manila", tel: "+63", tld: ".ph", tz: ["Asia/Manila"], lang: "English / Filipino", cur: [{"c":"PHP","s":"₱","n":"菲律宾比索"}], kw: ["菲律宾","philippines","ph","phl","+63","63","php","菲律宾比索","菲国"] },
+  { a2: "PK", a3: "PAK", n3: "586", en: "Pakistan", off: "巴基斯坦伊斯兰共和国", cn: "巴基斯坦", flag: "🇵🇰", reg: "亚洲", cap: "Islamabad", tel: "+92", tld: ".pk", tz: ["Asia/Karachi"], lang: "English / Urdu", cur: [{"c":"PKR","s":"₨","n":"巴基斯坦卢比"}], kw: ["巴基斯坦","pakistan","pk","pak","+92","92","pkr","巴基斯坦卢比","巴铁"] },
+  { a2: "PL", a3: "POL", n3: "616", en: "Poland", off: "波兰共和国", cn: "波兰", flag: "🇵🇱", reg: "欧洲", cap: "Warsaw", tel: "+48", tld: ".pl", tz: ["Europe/Warsaw"], lang: "Polish", cur: [{"c":"PLN","s":"zł","n":"波兰兹罗提"}], kw: ["波兰","poland","pl","pol","+48","48","pln","波兰兹罗提"] },
+  { a2: "PM", a3: "SPM", n3: "666", en: "Saint Pierre and Miquelon", off: "圣皮埃尔和密克隆", cn: "圣皮埃尔和密克隆", flag: "🇵🇲", reg: "北美洲", cap: "Saint-Pierre", tel: "+508", tld: ".pm", tz: ["America/Miquelon"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["圣皮埃尔和密克隆","saint pierre and miquelon","pm","spm","+508","508","eur","欧元"] },
+  { a2: "PN", a3: "PCN", n3: "612", en: "Pitcairn Islands", off: "皮特凯恩群岛", cn: "皮特凯恩群岛", flag: "🇵🇳", reg: "大洋洲", cap: "Adamstown", tel: "+64", tld: ".pn", tz: ["Pacific/Pitcairn"], lang: "English", cur: [{"c":"NZD","s":"$","n":"新西兰元"}], kw: ["皮特凯恩群岛","pitcairn islands","pn","pcn","+64","64","nzd","新西兰元"] },
+  { a2: "PR", a3: "PRI", n3: "630", en: "Puerto Rico", off: "波多黎各联邦", cn: "波多黎各", flag: "🇵🇷", reg: "北美洲", cap: "San Juan", tel: "+1", tld: ".pr", tz: ["America/Puerto_Rico"], lang: "English / Spanish", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["波多黎各","puerto rico","pr","pri","+1","1","usd","美元"] },
+  { a2: "PS", a3: "PSE", n3: "275", en: "Palestine", off: "巴勒斯坦国", cn: "巴勒斯坦", flag: "🇵🇸", reg: "亚洲", cap: "Ramallah", tel: "+970", tld: ".ps", tz: ["Asia/Gaza","Asia/Hebron"], lang: "Arabic", cur: [{"c":"EGP","s":"E£","n":"埃及镑"},{"c":"ILS","s":"₪","n":"以色列新谢克尔"},{"c":"JOD","s":"JD","n":"约旦第纳尔"}], kw: ["巴勒斯坦","palestine","ps","pse","+970","970","egp","ils","jod","埃及镑","以色列新谢克尔","约旦第纳尔"] },
+  { a2: "PT", a3: "PRT", n3: "620", en: "Portugal", off: "葡萄牙共和国", cn: "葡萄牙", flag: "🇵🇹", reg: "欧洲", cap: "Lisbon", tel: "+351", tld: ".pt", tz: ["Europe/Lisbon","Atlantic/Madeira","Atlantic/Azores"], lang: "Portuguese", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["葡萄牙","portugal","pt","prt","+351","351","eur","欧元"] },
+  { a2: "PW", a3: "PLW", n3: "585", en: "Palau", off: "帕劳共和国", cn: "帕劳", flag: "🇵🇼", reg: "大洋洲", cap: "Ngerulmud", tel: "+680", tld: ".pw", tz: ["Pacific/Palau"], lang: "English / Palauan", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["帕劳","palau","pw","plw","+680","680","usd","美元"] },
+  { a2: "PY", a3: "PRY", n3: "600", en: "Paraguay", off: "巴拉圭共和国", cn: "巴拉圭", flag: "🇵🇾", reg: "南美洲", cap: "Asunción", tel: "+595", tld: ".py", tz: ["America/Asuncion"], lang: "Guaraní / Spanish", cur: [{"c":"PYG","s":"₲","n":"巴拉圭瓜拉尼"}], kw: ["巴拉圭","paraguay","py","pry","+595","595","pyg","巴拉圭瓜拉尼"] },
+  { a2: "QA", a3: "QAT", n3: "634", en: "Qatar", off: "卡塔尔国", cn: "卡塔尔", flag: "🇶🇦", reg: "亚洲", cap: "Doha", tel: "+974", tld: ".qa", tz: ["Asia/Qatar"], lang: "Arabic", cur: [{"c":"QAR","s":"ر.ق","n":"卡塔尔里亚尔"}], kw: ["卡塔尔","qatar","qa","qat","+974","974","qar","卡塔尔里亚尔"] },
+  { a2: "RE", a3: "REU", n3: "638", en: "Réunion", off: "留尼旺岛", cn: "留尼旺岛", flag: "🇷🇪", reg: "非洲", cap: "Saint-Denis", tel: "+262", tld: ".re", tz: ["Asia/Dubai","Indian/Reunion"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["留尼旺岛","réunion","re","reu","+262","262","eur","欧元"] },
+  { a2: "RO", a3: "ROU", n3: "642", en: "Romania", off: "罗马尼亚", cn: "罗马尼亚", flag: "🇷🇴", reg: "欧洲", cap: "Bucharest", tel: "+40", tld: ".ro", tz: ["Europe/Bucharest"], lang: "Romanian", cur: [{"c":"RON","s":"lei","n":"罗马尼亚列伊"}], kw: ["罗马尼亚","romania","ro","rou","+40","40","ron","罗马尼亚列伊"] },
+  { a2: "RS", a3: "SRB", n3: "688", en: "Serbia", off: "塞尔维亚共和国", cn: "塞尔维亚", flag: "🇷🇸", reg: "欧洲", cap: "Belgrade", tel: "+381", tld: ".rs", tz: ["Europe/Belgrade"], lang: "Serbian", cur: [{"c":"RSD","s":"дин.","n":"塞尔维亚第纳尔"}], kw: ["塞尔维亚","serbia","rs","srb","+381","381","rsd","塞尔维亚第纳尔"] },
+  { a2: "RU", a3: "RUS", n3: "643", en: "Russia", off: "俄罗斯联邦", cn: "俄罗斯", flag: "🇷🇺", reg: "欧洲", cap: "Moscow", tel: "+7", tld: ".ru", tz: ["Europe/Kaliningrad","Europe/Moscow","Europe/Simferopol","Europe/Kirov","Europe/Volgograd","Europe/Astrakhan","Europe/Saratov","Europe/Ulyanovsk","Europe/Samara","Asia/Yekaterinburg","Asia/Omsk","Asia/Novosibirsk"], lang: "Russian", cur: [{"c":"RUB","s":"₽","n":"俄罗斯卢布"}], kw: ["俄罗斯","russia","ru","rus","+7","7","rub","俄罗斯卢布","俄国","老毛子","俄罗斯联邦"] },
+  { a2: "RW", a3: "RWA", n3: "646", en: "Rwanda", off: "卢旺达共和国", cn: "卢旺达", flag: "🇷🇼", reg: "非洲", cap: "Kigali", tel: "+250", tld: ".rw", tz: ["Africa/Maputo","Africa/Kigali"], lang: "English / French / Kinyarwanda", cur: [{"c":"RWF","s":"Fr","n":"卢旺达法郎"}], kw: ["卢旺达","rwanda","rw","rwa","+250","250","rwf","卢旺达法郎"] },
+  { a2: "SA", a3: "SAU", n3: "682", en: "Saudi Arabia", off: "沙特阿拉伯王国", cn: "沙特阿拉伯", flag: "🇸🇦", reg: "亚洲", cap: "Riyadh", tel: "+966", tld: ".sa", tz: ["Asia/Riyadh"], lang: "Arabic", cur: [{"c":"SAR","s":"ر.س","n":"沙特里亚尔"}], kw: ["沙特阿拉伯","saudi arabia","sa","sau","+966","966","sar","沙特里亚尔","saudi","沙特"] },
+  { a2: "SB", a3: "SLB", n3: "090", en: "Solomon Islands", off: "所罗门群岛", cn: "所罗门群岛", flag: "🇸🇧", reg: "大洋洲", cap: "Honiara", tel: "+677", tld: ".sb", tz: ["Pacific/Guadalcanal"], lang: "English", cur: [{"c":"SBD","s":"$","n":"所罗门群岛元"}], kw: ["所罗门群岛","solomon islands","sb","slb","+677","677","sbd","所罗门群岛元"] },
+  { a2: "SC", a3: "SYC", n3: "690", en: "Seychelles", off: "塞舌尔共和国", cn: "塞舌尔", flag: "🇸🇨", reg: "非洲", cap: "Victoria", tel: "+248", tld: ".sc", tz: ["Asia/Dubai","Indian/Mahe"], lang: "Seychellois Creole / English / French", cur: [{"c":"SCR","s":"₨","n":"Seychellois rupee"}], kw: ["塞舌尔","seychelles","sc","syc","+248","248","scr","Seychellois rupee"] },
+  { a2: "SD", a3: "SDN", n3: "729", en: "Sudan", off: "苏丹共和国", cn: "苏丹", flag: "🇸🇩", reg: "非洲", cap: "Khartoum", tel: "+249", tld: ".sd", tz: ["Africa/Khartoum"], lang: "Arabic / English", cur: [{"c":"SDG","s":"PT","n":"苏丹镑"}], kw: ["苏丹","sudan","sd","sdn","+249","249","sdg","苏丹镑"] },
+  { a2: "SE", a3: "SWE", n3: "752", en: "Sweden", off: "瑞典王国", cn: "瑞典", flag: "🇸🇪", reg: "欧洲", cap: "Stockholm", tel: "+46", tld: ".se", tz: ["Europe/Berlin","Europe/Stockholm"], lang: "Swedish", cur: [{"c":"SEK","s":"kr","n":"瑞典克朗"}], kw: ["瑞典","sweden","se","swe","+46","46","sek","瑞典克朗"] },
+  { a2: "SG", a3: "SGP", n3: "702", en: "Singapore", off: "新加坡共和国", cn: "新加坡", flag: "🇸🇬", reg: "亚洲", cap: "Singapore", tel: "+65", tld: ".sg", tz: ["Asia/Singapore"], lang: "English / Malay / Tamil / Chinese", cur: [{"c":"SGD","s":"$","n":"新加坡元"}], kw: ["新加坡","singapore","sg","sgp","+65","65","sgd","新加坡元","狮城","坡县","星加坡"] },
+  { a2: "SH", a3: "SHN", n3: "654", en: "Saint Helena, Ascension and Tristan da Cunha", off: "圣赫勒拿、阿森松和特里斯坦-达库尼亚", cn: "圣赫勒拿、阿森松和特里斯坦-达库尼亚", flag: "🇸🇭", reg: "非洲", cap: "Jamestown", tel: "+2", tld: ".sh", tz: ["Africa/Abidjan","Atlantic/St_Helena"], lang: "English", cur: [{"c":"GBP","s":"£","n":"英镑"},{"c":"SHP","s":"£","n":"圣赫勒拿镑"}], kw: ["圣赫勒拿、阿森松和特里斯坦-达库尼亚","saint helena, ascension and tristan da cunha","sh","shn","+2","2","gbp","shp","英镑","圣赫勒拿镑"] },
+  { a2: "SI", a3: "SVN", n3: "705", en: "Slovenia", off: "斯洛文尼亚共和国", cn: "斯洛文尼亚", flag: "🇸🇮", reg: "欧洲", cap: "Ljubljana", tel: "+386", tld: ".si", tz: ["Europe/Belgrade","Europe/Ljubljana"], lang: "Slovene", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["斯洛文尼亚","slovenia","si","svn","+386","386","eur","欧元"] },
+  { a2: "SJ", a3: "SJM", n3: "744", en: "Svalbard and Jan Mayen", off: "斯瓦尔巴特", cn: "斯瓦尔巴特", flag: "🇸🇯", reg: "欧洲", cap: "Longyearbyen", tel: "+4779", tld: ".sj", tz: ["Europe/Berlin","Arctic/Longyearbyen"], lang: "Norwegian", cur: [{"c":"NOK","s":"kr","n":"挪威克朗"}], kw: ["斯瓦尔巴特","svalbard and jan mayen","sj","sjm","+4779","4779","nok","挪威克朗"] },
+  { a2: "SK", a3: "SVK", n3: "703", en: "Slovakia", off: "斯洛伐克共和国", cn: "斯洛伐克", flag: "🇸🇰", reg: "欧洲", cap: "Bratislava", tel: "+421", tld: ".sk", tz: ["Europe/Prague","Europe/Bratislava"], lang: "Slovak", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["斯洛伐克","slovakia","sk","svk","+421","421","eur","欧元"] },
+  { a2: "SL", a3: "SLE", n3: "694", en: "Sierra Leone", off: "塞拉利昂共和国", cn: "塞拉利昂", flag: "🇸🇱", reg: "非洲", cap: "Freetown", tel: "+232", tld: ".sl", tz: ["Africa/Abidjan","Africa/Freetown"], lang: "English", cur: [{"c":"SLE","s":"Le","n":"Sierra Leonean leone"}], kw: ["塞拉利昂","sierra leone","sl","sle","+232","232","Sierra Leonean leone"] },
+  { a2: "SM", a3: "SMR", n3: "674", en: "San Marino", off: "圣马力诺共和国", cn: "圣马力诺", flag: "🇸🇲", reg: "欧洲", cap: "City of San Marino", tel: "+378", tld: ".sm", tz: ["Europe/Rome","Europe/San_Marino"], lang: "Italian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["圣马力诺","san marino","sm","smr","+378","378","eur","欧元"] },
+  { a2: "SN", a3: "SEN", n3: "686", en: "Senegal", off: "塞内加尔共和国", cn: "塞内加尔", flag: "🇸🇳", reg: "非洲", cap: "Dakar", tel: "+221", tld: ".sn", tz: ["Africa/Abidjan","Africa/Dakar"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["塞内加尔","senegal","sn","sen","+221","221","xof","西非法郎"] },
+  { a2: "SO", a3: "SOM", n3: "706", en: "Somalia", off: "索马里共和国", cn: "索马里", flag: "🇸🇴", reg: "非洲", cap: "Mogadishu", tel: "+252", tld: ".so", tz: ["Africa/Nairobi","Africa/Mogadishu"], lang: "Arabic / Somali", cur: [{"c":"SOS","s":"Sh","n":"Somali shilling"}], kw: ["索马里","somalia","so","som","+252","252","sos","Somali shilling"] },
+  { a2: "SR", a3: "SUR", n3: "740", en: "Suriname", off: "苏里南共和国", cn: "苏里南", flag: "🇸🇷", reg: "南美洲", cap: "Paramaribo", tel: "+597", tld: ".sr", tz: ["America/Paramaribo"], lang: "Dutch", cur: [{"c":"SRD","s":"$","n":"苏里南元"}], kw: ["苏里南","suriname","sr","sur","+597","597","srd","苏里南元"] },
+  { a2: "SS", a3: "SSD", n3: "728", en: "South Sudan", off: "南苏丹共和国", cn: "南苏丹", flag: "🇸🇸", reg: "非洲", cap: "Juba", tel: "+211", tld: ".ss", tz: ["Africa/Juba"], lang: "English", cur: [{"c":"SSP","s":"£","n":"South Sudanese pound"}], kw: ["南苏丹","south sudan","ss","ssd","+211","211","ssp","South Sudanese pound"] },
+  { a2: "ST", a3: "STP", n3: "678", en: "São Tomé and Príncipe", off: "圣多美和普林西比民主共和国", cn: "圣多美和普林西比", flag: "🇸🇹", reg: "非洲", cap: "São Tomé", tel: "+239", tld: ".st", tz: ["Africa/Sao_Tome"], lang: "Portuguese", cur: [{"c":"STN","s":"Db","n":"São Tomé and Príncipe dobra"}], kw: ["圣多美和普林西比","são tomé and príncipe","st","stp","+239","239","stn","São Tomé and Príncipe dobra"] },
+  { a2: "SV", a3: "SLV", n3: "222", en: "El Salvador", off: "萨尔瓦多共和国", cn: "萨尔瓦多", flag: "🇸🇻", reg: "北美洲", cap: "San Salvador", tel: "+503", tld: ".sv", tz: ["America/El_Salvador"], lang: "Spanish", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["萨尔瓦多","el salvador","sv","slv","+503","503","usd","美元"] },
+  { a2: "SX", a3: "SXM", n3: "534", en: "Sint Maarten", off: "圣马丁岛", cn: "圣马丁岛", flag: "🇸🇽", reg: "北美洲", cap: "Philipsburg", tel: "+1721", tld: ".sx", tz: ["America/Puerto_Rico","America/Lower_Princes"], lang: "English / French / Dutch", cur: [{"c":"ANG","s":"ƒ","n":"荷属安的列斯盾"}], kw: ["圣马丁岛","sint maarten","sx","sxm","+1721","1721","ang","荷属安的列斯盾"] },
+  { a2: "SY", a3: "SYR", n3: "760", en: "Syria", off: "叙利亚阿拉伯共和国", cn: "叙利亚", flag: "🇸🇾", reg: "亚洲", cap: "Damascus", tel: "+963", tld: ".sy", tz: ["Asia/Damascus"], lang: "Arabic", cur: [{"c":"SYP","s":"£","n":"Syrian pound"}], kw: ["叙利亚","syria","sy","syr","+963","963","syp","Syrian pound"] },
+  { a2: "SZ", a3: "SWZ", n3: "748", en: "Eswatini", off: "斯威士兰王国", cn: "斯威士兰", flag: "🇸🇿", reg: "非洲", cap: "Lobamba", tel: "+268", tld: ".sz", tz: ["Africa/Johannesburg","Africa/Mbabane"], lang: "English / Swazi", cur: [{"c":"SZL","s":"L","n":"Swazi lilangeni"},{"c":"ZAR","s":"R","n":"南非兰特"}], kw: ["斯威士兰","eswatini","sz","swz","+268","268","szl","zar","Swazi lilangeni","南非兰特"] },
+  { a2: "TC", a3: "TCA", n3: "796", en: "Turks and Caicos Islands", off: "特克斯和凯科斯群岛", cn: "特克斯和凯科斯群岛", flag: "🇹🇨", reg: "北美洲", cap: "Cockburn Town", tel: "+1649", tld: ".tc", tz: ["America/Grand_Turk"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["特克斯和凯科斯群岛","turks and caicos islands","tc","tca","+1649","1649","usd","美元"] },
+  { a2: "TD", a3: "TCD", n3: "148", en: "Chad", off: "乍得共和国", cn: "乍得", flag: "🇹🇩", reg: "非洲", cap: "N'Djamena", tel: "+235", tld: ".td", tz: ["Africa/Ndjamena"], lang: "Arabic / French", cur: [{"c":"XAF","s":"Fr","n":"中非法郎"}], kw: ["乍得","chad","td","tcd","+235","235","xaf","中非法郎"] },
+  { a2: "TF", a3: "ATF", n3: "260", en: "French Southern and Antarctic Lands", off: "法国南部和南极土地", cn: "法国南部和南极土地", flag: "🇹🇫", reg: "南极洲", cap: "Port-aux-Français", tel: "+262", tld: ".tf", tz: ["Asia/Dubai","Indian/Maldives","Indian/Kerguelen"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["法国南部和南极土地","french southern and antarctic lands","tf","atf","+262","262","eur","欧元"] },
+  { a2: "TG", a3: "TGO", n3: "768", en: "Togo", off: "多哥共和国", cn: "多哥", flag: "🇹🇬", reg: "非洲", cap: "Lomé", tel: "+228", tld: ".tg", tz: ["Africa/Abidjan","Africa/Lome"], lang: "French", cur: [{"c":"XOF","s":"Fr","n":"西非法郎"}], kw: ["多哥","togo","tg","tgo","+228","228","xof","西非法郎"] },
+  { a2: "TH", a3: "THA", n3: "764", en: "Thailand", off: "泰王国", cn: "泰国", flag: "🇹🇭", reg: "亚洲", cap: "Bangkok", tel: "+66", tld: ".th", tz: ["Asia/Bangkok"], lang: "Thai", cur: [{"c":"THB","s":"฿","n":"泰铢"}], kw: ["泰国","thailand","th","tha","+66","66","thb","泰铢","暹罗"] },
+  { a2: "TJ", a3: "TJK", n3: "762", en: "Tajikistan", off: "塔吉克斯坦共和国", cn: "塔吉克斯坦", flag: "🇹🇯", reg: "亚洲", cap: "Dushanbe", tel: "+992", tld: ".tj", tz: ["Asia/Dushanbe"], lang: "Russian / Tajik", cur: [{"c":"TJS","s":"ЅМ","n":"Tajikistani somoni"}], kw: ["塔吉克斯坦","tajikistan","tj","tjk","+992","992","tjs","Tajikistani somoni"] },
+  { a2: "TK", a3: "TKL", n3: "772", en: "Tokelau", off: "托克劳", cn: "托克劳", flag: "🇹🇰", reg: "大洋洲", cap: "Fakaofo", tel: "+690", tld: ".tk", tz: ["Pacific/Fakaofo"], lang: "English / Samoan / Tokelauan", cur: [{"c":"NZD","s":"$","n":"新西兰元"}], kw: ["托克劳","tokelau","tk","tkl","+690","690","nzd","新西兰元"] },
+  { a2: "TL", a3: "TLS", n3: "626", en: "Timor-Leste", off: "东帝汶民主共和国", cn: "东帝汶", flag: "🇹🇱", reg: "亚洲", cap: "Dili", tel: "+670", tld: ".tl", tz: ["Asia/Dili"], lang: "Portuguese / Tetum", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["东帝汶","timor-leste","tl","tls","+670","670","usd","美元"] },
+  { a2: "TM", a3: "TKM", n3: "795", en: "Turkmenistan", off: "土库曼斯坦", cn: "土库曼斯坦", flag: "🇹🇲", reg: "亚洲", cap: "Ashgabat", tel: "+993", tld: ".tm", tz: ["Asia/Ashgabat"], lang: "Russian / Turkmen", cur: [{"c":"TMT","s":"m","n":"Turkmenistan manat"}], kw: ["土库曼斯坦","turkmenistan","tm","tkm","+993","993","tmt","Turkmenistan manat"] },
+  { a2: "TN", a3: "TUN", n3: "788", en: "Tunisia", off: "突尼斯共和国", cn: "突尼斯", flag: "🇹🇳", reg: "非洲", cap: "Tunis", tel: "+216", tld: ".tn", tz: ["Africa/Tunis"], lang: "Arabic", cur: [{"c":"TND","s":"د.ت","n":"突尼斯第纳尔"}], kw: ["突尼斯","tunisia","tn","tun","+216","216","tnd","突尼斯第纳尔"] },
+  { a2: "TO", a3: "TON", n3: "776", en: "Tonga", off: "汤加王国", cn: "汤加", flag: "🇹🇴", reg: "大洋洲", cap: "Nuku'alofa", tel: "+676", tld: ".to", tz: ["Pacific/Tongatapu"], lang: "English / Tongan", cur: [{"c":"TOP","s":"T$","n":"汤加潘加"}], kw: ["汤加","tonga","to","ton","+676","676","top","汤加潘加"] },
+  { a2: "TR", a3: "TUR", n3: "792", en: "Türkiye", off: "土耳其共和国", cn: "土耳其", flag: "🇹🇷", reg: "亚洲", cap: "Ankara", tel: "+90", tld: ".tr", tz: ["Europe/Istanbul"], lang: "Turkish", cur: [{"c":"TRY","s":"₺","n":"土耳其里拉"}], kw: ["土耳其","türkiye","tr","tur","+90","90","try","土耳其里拉","turkey","turkiye"] },
+  { a2: "TT", a3: "TTO", n3: "780", en: "Trinidad and Tobago", off: "特立尼达和多巴哥共和国", cn: "特立尼达和多巴哥", flag: "🇹🇹", reg: "北美洲", cap: "Port of Spain", tel: "+1868", tld: ".tt", tz: ["America/Puerto_Rico","America/Port_of_Spain"], lang: "English", cur: [{"c":"TTD","s":"$","n":"特立尼达和多巴哥元"}], kw: ["特立尼达和多巴哥","trinidad and tobago","tt","tto","+1868","1868","ttd","特立尼达和多巴哥元"] },
+  { a2: "TV", a3: "TUV", n3: "798", en: "Tuvalu", off: "图瓦卢", cn: "图瓦卢", flag: "🇹🇻", reg: "大洋洲", cap: "Funafuti", tel: "+688", tld: ".tv", tz: ["Pacific/Tarawa","Pacific/Funafuti"], lang: "English / Tuvaluan", cur: [{"c":"AUD","s":"$","n":"澳元"},{"c":"TVD","s":"$","n":"Tuvaluan dollar"}], kw: ["图瓦卢","tuvalu","tv","tuv","+688","688","aud","tvd","澳元","Tuvaluan dollar"] },
+  { a2: "TW", a3: "TWN", n3: "158", en: "Taiwan", off: "中華民國", cn: "台灣", flag: "🇹🇼", reg: "亚洲", cap: "Taipei", tel: "+886", tld: ".tw", tz: ["Asia/Taipei"], lang: "Chinese", cur: [{"c":"TWD","s":"$","n":"新台币"}], kw: ["台灣","taiwan","tw","twn","+886","886","twd","新台币","台湾省","中华台北"] },
+  { a2: "TZ", a3: "TZA", n3: "834", en: "Tanzania", off: "坦桑尼亚联合共和国", cn: "坦桑尼亚", flag: "🇹🇿", reg: "非洲", cap: "Dodoma", tel: "+255", tld: ".tz", tz: ["Africa/Nairobi","Africa/Dar_es_Salaam"], lang: "English / Swahili", cur: [{"c":"TZS","s":"Sh","n":"坦桑尼亚先令"}], kw: ["坦桑尼亚","tanzania","tz","tza","+255","255","tzs","坦桑尼亚先令"] },
+  { a2: "UA", a3: "UKR", n3: "804", en: "Ukraine", off: "乌克兰", cn: "乌克兰", flag: "🇺🇦", reg: "欧洲", cap: "Kyiv", tel: "+380", tld: ".ua", tz: ["Europe/Simferopol","Europe/Kyiv"], lang: "Ukrainian", cur: [{"c":"UAH","s":"₴","n":"乌克兰格里夫纳"}], kw: ["乌克兰","ukraine","ua","ukr","+380","380","uah","乌克兰格里夫纳","二毛"] },
+  { a2: "UG", a3: "UGA", n3: "800", en: "Uganda", off: "乌干达共和国", cn: "乌干达", flag: "🇺🇬", reg: "非洲", cap: "Kampala", tel: "+256", tld: ".ug", tz: ["Africa/Nairobi","Africa/Kampala"], lang: "English / Swahili", cur: [{"c":"UGX","s":"Sh","n":"乌干达先令"}], kw: ["乌干达","uganda","ug","uga","+256","256","ugx","乌干达先令"] },
+  { a2: "UM", a3: "UMI", n3: "581", en: "United States Minor Outlying Islands", off: "美国本土外小岛屿", cn: "美国本土外小岛屿", flag: "🇺🇲", reg: "北美洲", cap: "", tel: "+268", tld: ".us", tz: ["Pacific/Pago_Pago","Pacific/Tarawa","Pacific/Midway","Pacific/Wake"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["美国本土外小岛屿","united states minor outlying islands","um","umi","+268","268","usd","美元"] },
+  { a2: "US", a3: "USA", n3: "840", en: "United States", off: "美利坚合众国", cn: "美国", flag: "🇺🇸", reg: "北美洲", cap: "Washington D.C.", tel: "+1", tld: ".us", tz: ["America/New_York","America/Detroit","America/Kentucky/Louisville","America/Kentucky/Monticello","America/Indiana/Indianapolis","America/Indiana/Vincennes","America/Indiana/Winamac","America/Indiana/Marengo","America/Indiana/Petersburg","America/Indiana/Vevay","America/Chicago","America/Indiana/Tell_City"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["美国","united states","us","usa","+1","1","usd","美元","america","美帝","漂亮国","米国","美利坚"] },
+  { a2: "UY", a3: "URY", n3: "858", en: "Uruguay", off: "乌拉圭东岸共和国", cn: "乌拉圭", flag: "🇺🇾", reg: "南美洲", cap: "Montevideo", tel: "+598", tld: ".uy", tz: ["America/Montevideo"], lang: "Spanish", cur: [{"c":"UYU","s":"$","n":"乌拉圭比索"}], kw: ["乌拉圭","uruguay","uy","ury","+598","598","uyu","乌拉圭比索"] },
+  { a2: "UZ", a3: "UZB", n3: "860", en: "Uzbekistan", off: "乌兹别克斯坦共和国", cn: "乌兹别克斯坦", flag: "🇺🇿", reg: "亚洲", cap: "Tashkent", tel: "+998", tld: ".uz", tz: ["Asia/Samarkand","Asia/Tashkent"], lang: "Russian / Uzbek", cur: [{"c":"UZS","s":"so'm","n":"乌兹别克斯坦索姆"}], kw: ["乌兹别克斯坦","uzbekistan","uz","uzb","+998","998","uzs","乌兹别克斯坦索姆"] },
+  { a2: "VA", a3: "VAT", n3: "336", en: "Vatican City", off: "梵蒂冈城国", cn: "梵蒂冈", flag: "🇻🇦", reg: "欧洲", cap: "Vatican City", tel: "+3", tld: ".va", tz: ["Europe/Rome","Europe/Vatican"], lang: "Italian / Latin", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["梵蒂冈","vatican city","va","vat","+3","3","eur","欧元"] },
+  { a2: "VC", a3: "VCT", n3: "670", en: "Saint Vincent and the Grenadines", off: "圣文森特和格林纳丁斯", cn: "圣文森特和格林纳丁斯", flag: "🇻🇨", reg: "北美洲", cap: "Kingstown", tel: "+1784", tld: ".vc", tz: ["America/Puerto_Rico","America/St_Vincent"], lang: "English", cur: [{"c":"XCD","s":"$","n":"东加勒比元"}], kw: ["圣文森特和格林纳丁斯","saint vincent and the grenadines","vc","vct","+1784","1784","xcd","东加勒比元"] },
+  { a2: "VE", a3: "VEN", n3: "862", en: "Venezuela", off: "委内瑞拉玻利瓦尔共和国", cn: "委内瑞拉", flag: "🇻🇪", reg: "南美洲", cap: "Caracas", tel: "+58", tld: ".ve", tz: ["America/Caracas"], lang: "Spanish", cur: [{"c":"VES","s":"Bs.S.","n":"委内瑞拉玻利瓦尔"}], kw: ["委内瑞拉","venezuela","ve","ven","+58","58","ves","委内瑞拉玻利瓦尔"] },
+  { a2: "VG", a3: "VGB", n3: "092", en: "British Virgin Islands", off: "英属维尔京群岛", cn: "英属维尔京群岛", flag: "🇻🇬", reg: "北美洲", cap: "Road Town", tel: "+1284", tld: ".vg", tz: ["America/Puerto_Rico","America/Tortola"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["英属维尔京群岛","british virgin islands","vg","vgb","+1284","1284","usd","美元"] },
+  { a2: "VI", a3: "VIR", n3: "850", en: "United States Virgin Islands", off: "美属维尔京群岛", cn: "美属维尔京群岛", flag: "🇻🇮", reg: "北美洲", cap: "Charlotte Amalie", tel: "+1340", tld: ".vi", tz: ["America/Puerto_Rico","America/St_Thomas"], lang: "English", cur: [{"c":"USD","s":"$","n":"美元"}], kw: ["美属维尔京群岛","united states virgin islands","vi","vir","+1340","1340","usd","美元"] },
+  { a2: "VN", a3: "VNM", n3: "704", en: "Vietnam", off: "越南社会主义共和国", cn: "越南", flag: "🇻🇳", reg: "亚洲", cap: "Hanoi", tel: "+84", tld: ".vn", tz: ["Asia/Bangkok","Asia/Ho_Chi_Minh"], lang: "Vietnamese", cur: [{"c":"VND","s":"₫","n":"越南盾"}], kw: ["越南","vietnam","vn","vnm","+84","84","vnd","越南盾"] },
+  { a2: "VU", a3: "VUT", n3: "548", en: "Vanuatu", off: "瓦努阿图共和国", cn: "瓦努阿图", flag: "🇻🇺", reg: "大洋洲", cap: "Port Vila", tel: "+678", tld: ".vu", tz: ["Pacific/Efate"], lang: "Bislama / English / French", cur: [{"c":"VUV","s":"Vt","n":"瓦努阿图瓦图"}], kw: ["瓦努阿图","vanuatu","vu","vut","+678","678","vuv","瓦努阿图瓦图"] },
+  { a2: "WF", a3: "WLF", n3: "876", en: "Wallis and Futuna", off: "瓦利斯和富图纳群岛", cn: "瓦利斯和富图纳群岛", flag: "🇼🇫", reg: "大洋洲", cap: "Mata-Utu", tel: "+681", tld: ".wf", tz: ["Pacific/Tarawa","Pacific/Wallis"], lang: "French", cur: [{"c":"XPF","s":"₣","n":"太平洋法郎"}], kw: ["瓦利斯和富图纳群岛","wallis and futuna","wf","wlf","+681","681","xpf","太平洋法郎"] },
+  { a2: "WS", a3: "WSM", n3: "882", en: "Samoa", off: "萨摩亚独立国", cn: "萨摩亚", flag: "🇼🇸", reg: "大洋洲", cap: "Apia", tel: "+685", tld: ".ws", tz: ["Pacific/Apia"], lang: "English / Samoan", cur: [{"c":"WST","s":"T","n":"萨摩亚塔拉"}], kw: ["萨摩亚","samoa","ws","wsm","+685","685","wst","萨摩亚塔拉"] },
+  { a2: "XK", a3: "UNK", n3: "", en: "Kosovo", off: "科索沃共和国", cn: "科索沃", flag: "🇽🇰", reg: "欧洲", cap: "Pristina", tel: "+383", tld: ".xk", tz: [], lang: "Albanian / Serbian", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["科索沃","kosovo","xk","unk","+383","383","eur","欧元"] },
+  { a2: "YE", a3: "YEM", n3: "887", en: "Yemen", off: "也门共和国", cn: "也门", flag: "🇾🇪", reg: "亚洲", cap: "Sana'a", tel: "+967", tld: ".ye", tz: ["Asia/Riyadh","Asia/Aden"], lang: "Arabic", cur: [{"c":"YER","s":"﷼","n":"也门里亚尔"}], kw: ["也门","yemen","ye","yem","+967","967","yer","也门里亚尔"] },
+  { a2: "YT", a3: "MYT", n3: "175", en: "Mayotte", off: "马约特", cn: "马约特", flag: "🇾🇹", reg: "非洲", cap: "Mamoudzou", tel: "+262", tld: ".yt", tz: ["Africa/Nairobi","Indian/Mayotte"], lang: "French", cur: [{"c":"EUR","s":"€","n":"欧元"}], kw: ["马约特","mayotte","yt","myt","+262","262","eur","欧元"] },
+  { a2: "ZA", a3: "ZAF", n3: "710", en: "South Africa", off: "南非共和国", cn: "南非", flag: "🇿🇦", reg: "非洲", cap: "Pretoria", tel: "+27", tld: ".za", tz: ["Africa/Johannesburg"], lang: "Afrikaans / English / Southern Ndebele / Northern Sotho / Southern Sotho / Swazi / Tswana / Tsonga / Venda / Xhosa / Zulu", cur: [{"c":"ZAR","s":"R","n":"南非兰特"}], kw: ["南非","south africa","za","zaf","+27","27","zar","南非兰特"] },
+  { a2: "ZM", a3: "ZMB", n3: "894", en: "Zambia", off: "赞比亚共和国", cn: "赞比亚", flag: "🇿🇲", reg: "非洲", cap: "Lusaka", tel: "+260", tld: ".zm", tz: ["Africa/Maputo","Africa/Lusaka"], lang: "English", cur: [{"c":"ZMW","s":"ZK","n":"赞比亚克瓦查"}], kw: ["赞比亚","zambia","zm","zmb","+260","260","zmw","赞比亚克瓦查"] },
+  { a2: "ZW", a3: "ZWE", n3: "716", en: "Zimbabwe", off: "津巴布韦共和国", cn: "津巴布韦", flag: "🇿🇼", reg: "非洲", cap: "Harare", tel: "+263", tld: ".zw", tz: ["Africa/Maputo","Africa/Harare"], lang: "Chibarwe / English / Kalanga / Khoisan / Ndau / Northern Ndebele / Chewa / Shona / Sotho / Tonga / Tswana / Tsonga / Venda / Xhosa / Zimbabwean Sign Language", cur: [{"c":"BWP","s":"P","n":"博茨瓦纳普拉"},{"c":"CNY","s":"¥","n":"人民币"},{"c":"EUR","s":"€","n":"欧元"},{"c":"GBP","s":"£","n":"英镑"},{"c":"INR","s":"₹","n":"印度卢比"},{"c":"JPY","s":"¥","n":"日元"},{"c":"USD","s":"$","n":"美元"},{"c":"ZAR","s":"Rs","n":"南非兰特"},{"c":"ZWB","s":"$","n":"Zimbabwean bonds"}], kw: ["津巴布韦","zimbabwe","zw","zwe","+263","263","bwp","cny","eur","gbp","inr","jpy","usd","zar","zwb","博茨瓦纳普拉","人民币","欧元","英镑","印度卢比","日元","美元","南非兰特","Zimbabwean bonds"] },
+];
+
+const REGIONS = ['亚洲', '欧洲', '北美洲', '南美洲', '非洲', '大洋洲', '南极洲'];
+
+/* ---------- 状态 ---------- */
+const LS_FAV = 'country-info-favs';
+const LS_RECENT = 'country-info-recent';
+const LS_THEME = 'country-info-theme';
+const RECENT_MAX = 24;
+
+let favs = new Set(readLS(LS_FAV, []));
+let recent = readLS(LS_RECENT, []);   // a2 数组，新→旧
+let activeTab = '全部';
+let query = '';
+let selectedA2 = null;
+let tzTimer = null;
+
+function readLS(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v === null || v === undefined ? fallback : v;
+  } catch { return fallback; }
+}
+function writeLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* 隐私模式忽略 */ }
+}
+
+/* ---------- DOM ---------- */
+const $ = id => document.getElementById(id);
+const mainEl = $('main'), tabsEl = $('tabs');
+const searchInput = $('searchInput'), clearSearchBtn = $('clearSearch');
+const detailEl = $('detail'), detailBody = $('detailBody');
+
+/* ---------- 图标 ---------- */
+const SVG_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const SVG_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+const SVG_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+/* ---------- 搜索 ---------- */
+function matchCountry(c, q) {
+  const ql = q.toLowerCase();
+  if (c.cn.includes(q) || c.off.includes(q)) return true;
+  if (c.en.toLowerCase().includes(ql)) return true;
+  if (c.a2.toLowerCase() === ql || c.a3.toLowerCase() === ql) return true;
+  if (c.n3 === ql) return true;
+  if (c.tel && (c.tel === q || c.tel.replace('+', '') === ql.replace('+', ''))) return true;
+  if (c.tld && c.tld === ql) return true;
+  return c.kw.some(k => k.toLowerCase().includes(ql));
+}
+
+function visibleCountries() {
+  let list = COUNTRY_DATA;
+  if (activeTab !== '全部') list = list.filter(c => c.reg === activeTab);
+  if (query) list = list.filter(c => matchCountry(c, query));
+  return list;
+}
+
+/* ---------- 渲染：tabs ---------- */
+function renderTabs() {
+  tabsEl.textContent = '';
+  for (const name of ['全部', ...REGIONS]) {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (name === activeTab ? ' active' : '');
+    btn.textContent = name;
+    btn.addEventListener('click', () => {
+      activeTab = name;
+      renderTabs();
+      renderMain();
+    });
+    tabsEl.appendChild(btn);
+  }
+}
+
+/* ---------- 渲染：主体 ---------- */
+function starBtn(a2) {
+  const b = document.createElement('button');
+  b.className = 'fav-star' + (favs.has(a2) ? ' on' : '');
+  b.title = '收藏';
+  b.innerHTML = SVG_STAR; // 静态常量，非用户输入
+  b.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleFav(a2);
+  });
+  return b;
+}
+
+function countryCard(c) {
+  const card = document.createElement('div');
+  card.className = 'country-card' + (c.a2 === selectedA2 ? ' selected' : '');
+  card.dataset.a2 = c.a2;
+
+  const flag = document.createElement('div');
+  flag.className = 'flag';
+  flag.textContent = c.flag || '🏳️';
+
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = c.cn;
+
+  const code = document.createElement('div');
+  code.className = 'code';
+  code.textContent = c.cur.length ? `${c.a2} · ${c.cur[0].c}` : c.a2;
+
+  card.appendChild(starBtn(c.a2));
+  card.appendChild(flag);
+  card.appendChild(name);
+  card.appendChild(code);
+
+  card.addEventListener('click', () => selectCountry(c.a2));
+  card.addEventListener('mouseenter', e => showTooltip(e.currentTarget, `${c.cn} · ${c.en}`));
+  card.addEventListener('mouseleave', hideTooltip);
+  return card;
+}
+
+function sectionEl(title, list, opts = {}) {
+  const sec = document.createElement('section');
+  sec.className = 'reg-section';
+
+  const h = document.createElement('h2');
+  h.className = 'reg-title';
+  const t = document.createElement('span');
+  t.textContent = title;
+  const cnt = document.createElement('span');
+  cnt.className = 'count';
+  cnt.textContent = list.length;
+  h.appendChild(t);
+  h.appendChild(cnt);
+  if (opts.clearable) {
+    const clr = document.createElement('button');
+    clr.className = 'title-clear';
+    clr.textContent = '清空';
+    clr.addEventListener('click', opts.onClear);
+    h.appendChild(clr);
+  }
+  sec.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'country-grid';
+  for (const c of list) grid.appendChild(countryCard(c));
+  sec.appendChild(grid);
+  return sec;
+}
+
+function byA2(a2) { return COUNTRY_DATA.find(c => c.a2 === a2); }
+
+function renderMain() {
+  mainEl.textContent = '';
+  const list = visibleCountries();
+  $('totalStat').textContent = COUNTRY_DATA.length;
+  $('matchStat').textContent = list.length;
+
+  const favList = [...favs].map(byA2).filter(Boolean);
+  const recentList = recent.map(byA2).filter(Boolean);
+
+  // 「全部」且无搜索词时，顶部展示收藏与最近使用
+  if (activeTab === '全部' && !query) {
+    if (favList.length) {
+      mainEl.appendChild(sectionEl('⭐ 收藏', favList, {
+        clearable: true,
+        onClear: () => { favs.clear(); writeLS(LS_FAV, []); syncStars(); renderMain(); refreshDetailFav(); toast('已清空收藏'); },
+      }));
+    }
+    if (recentList.length) {
+      mainEl.appendChild(sectionEl('🕘 最近使用', recentList, {
+        clearable: true,
+        onClear: () => { recent = []; writeLS(LS_RECENT, []); renderMain(); toast('已清空最近使用'); },
+      }));
+    }
+  }
+
+  if (!list.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    const big = document.createElement('div');
+    big.className = 'big';
+    big.textContent = '🔍';
+    const h3 = document.createElement('h3');
+    h3.textContent = '没有匹配的国家或地区';
+    const p = document.createElement('p');
+    p.textContent = '试试中文名、英文名、两位国家码（CN）、货币码（USD）或电话区号（+86）。';
+    empty.appendChild(big); empty.appendChild(h3); empty.appendChild(p);
+    mainEl.appendChild(empty);
+    return;
+  }
+
+  if (activeTab === '全部') {
+    for (const reg of REGIONS) {
+      const sub = list.filter(c => c.reg === reg);
+      if (sub.length) mainEl.appendChild(sectionEl(reg, sub));
+    }
+  } else {
+    mainEl.appendChild(sectionEl(activeTab, list));
+  }
+}
+
+/* ---------- 收藏 / 最近 ---------- */
+function toggleFav(a2) {
+  if (favs.has(a2)) { favs.delete(a2); toast('已取消收藏'); }
+  else { favs.add(a2); toast('已加入收藏'); }
+  writeLS(LS_FAV, [...favs]);
+  syncStars();
+  refreshDetailFav();
+  if (activeTab === '全部' && !query) renderMain();
+}
+
+function pushRecent(a2) {
+  recent = [a2, ...recent.filter(x => x !== a2)].slice(0, RECENT_MAX);
+  writeLS(LS_RECENT, recent);
+  if (activeTab === '全部' && !query) renderMain();
+}
+
+function syncStars() {
+  document.querySelectorAll('.country-card').forEach(card => {
+    const star = card.querySelector('.fav-star');
+    if (star) star.classList.toggle('on', favs.has(card.dataset.a2));
+  });
+}
+
+/* ---------- 详情面板 ---------- */
+function detailRow(labelText, valueText, copyText, valueClass) {
+  const row = document.createElement('div');
+  row.className = 'detail-row';
+  const label = document.createElement('label');
+  label.textContent = labelText;
+  const value = document.createElement('div');
+  value.className = 'value' + (valueClass ? ' ' + valueClass : '');
+  value.textContent = valueText;
+  value.title = valueText;
+  const btn = document.createElement('button');
+  btn.className = 'copy-mini';
+  btn.title = `复制${labelText}`;
+  btn.innerHTML = SVG_COPY; // 静态常量
+  btn.addEventListener('click', () => copyText_(copyText ?? valueText, labelText));
+  row.appendChild(label); row.appendChild(value); row.appendChild(btn);
+  return row;
+}
+
+function sectionTitle(text) {
+  const d = document.createElement('div');
+  d.className = 'detail-section-title';
+  d.textContent = text;
+  return d;
+}
+
+function tzTimeStr(tz) {
+  try {
+    const time = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date());
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone: tz, timeZoneName: 'shortOffset',
+    }).formatToParts(new Date());
+    const offset = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
+    return `${time} · ${offset.replace('GMT', 'UTC')}`;
+  } catch { return ''; }
+}
+
+function renderDetail() {
+  const c = byA2(selectedA2);
+  if (!c) return;
+  $('detailBig').textContent = c.flag || '🏳️';
+  $('detailCn').textContent = c.cn;
+  $('detailEn').textContent = c.en;
+
+  detailBody.textContent = '';
+
+  detailBody.appendChild(sectionTitle('编码信息'));
+  detailBody.appendChild(detailRow('CCA2', c.a2));
+  detailBody.appendChild(detailRow('CCA3', c.a3));
+  if (c.n3) detailBody.appendChild(detailRow('数字码', c.n3));
+  if (c.tld) detailBody.appendChild(detailRow('顶级域', c.tld));
+  if (c.tel) detailBody.appendChild(detailRow('电话区号', c.tel));
+
+  detailBody.appendChild(sectionTitle('基本信息'));
+  detailBody.appendChild(detailRow('官方名', c.off));
+  if (c.cap) detailBody.appendChild(detailRow('首都', c.cap));
+  detailBody.appendChild(detailRow('大洲', c.reg));
+  if (c.lang) detailBody.appendChild(detailRow('语言', c.lang));
+
+  if (c.cur.length) {
+    detailBody.appendChild(sectionTitle('货币'));
+    for (const cur of c.cur) {
+      detailBody.appendChild(detailRow(cur.c, `${cur.s ? cur.s + ' ' : ''}${cur.n}`, cur.c));
+      let preview = '';
+      try {
+        preview = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: cur.c }).format(1234.56);
+      } catch { /* 不支持币种跳过 */ }
+      if (preview) {
+        const sub = document.createElement('div');
+        sub.className = 'detail-sub';
+        sub.textContent = `格式示例：${preview}`;
+        detailBody.appendChild(sub);
+      }
+    }
+  }
+
+  if (c.tz.length) {
+    detailBody.appendChild(sectionTitle('时区（当前时间）'));
+    // moment-timezone 含别名时区（如 Detroit 同 New York），按当前时间+偏移去重
+    const seen = new Set();
+    const zones = c.tz.filter(tz => {
+      const s = tzTimeStr(tz);
+      if (seen.has(s)) return false;
+      seen.add(s);
+      return true;
+    });
+    const show = zones.slice(0, 5);
+    for (const tz of show) {
+      detailBody.appendChild(detailRow(tz.split('/').pop().replace(/_/g, ' '), `${tzTimeStr(tz)}`, tz, 'tz-time'));
+    }
+    if (zones.length > 5) {
+      const sub = document.createElement('div');
+      sub.className = 'detail-sub';
+      sub.textContent = `共 ${zones.length} 个时区，仅展示前 5 个`;
+      detailBody.appendChild(sub);
+    }
+  }
+  refreshDetailFav();
+}
+
+function refreshDetailFav() {
+  const btn = $('detailFav');
+  btn.innerHTML = SVG_STAR;
+  btn.classList.toggle('on', !!selectedA2 && favs.has(selectedA2));
+}
+
+function selectCountry(a2) {
+  selectedA2 = a2;
+  renderDetail();
+  detailEl.classList.remove('hidden');
+  detailEl.classList.add('visible');
+  document.querySelectorAll('.country-card').forEach(card =>
+    card.classList.toggle('selected', card.dataset.a2 === a2));
+  pushRecent(a2);
+  startTzTimer();
+}
+
+function closeDetail() {
+  selectedA2 = null;
+  detailEl.classList.add('hidden');
+  detailEl.classList.remove('visible');
+  stopTzTimer();
+  document.querySelectorAll('.country-card.selected').forEach(el => el.classList.remove('selected'));
+}
+
+/* 详情打开时每 30s 刷新时区时间 */
+function startTzTimer() {
+  stopTzTimer();
+  tzTimer = setInterval(() => { if (selectedA2) renderDetail(); }, 30000);
+}
+function stopTzTimer() {
+  if (tzTimer) { clearInterval(tzTimer); tzTimer = null; }
+}
+
+/* ---------- 复制 / Toast / Tooltip ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const el = $('toast');
+  el.innerHTML = SVG_CHECK; // 静态常量
+  el.appendChild(document.createTextNode(msg));
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+async function copyText_(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+  toast(`已复制${label ? ' ' + label : ''}：${text}`);
+}
+
+const tooltipEl = $('tooltip');
+function showTooltip(anchor, text) {
+  tooltipEl.textContent = text;
+  const r = anchor.getBoundingClientRect();
+  tooltipEl.style.left = (r.left + r.width / 2) + 'px';
+  tooltipEl.style.top = r.top + 'px';
+  tooltipEl.classList.add('show');
+}
+function hideTooltip() { tooltipEl.classList.remove('show'); }
+
+/* ---------- 主题 ---------- */
+function applyTheme(theme) {
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+  $('themeBtn').innerHTML = theme === 'dark' ? SVG_SUN : SVG_MOON;
+}
+function initTheme() {
+  const saved = localStorage.getItem(LS_THEME);
+  const theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(theme);
+}
+$('themeBtn').addEventListener('click', () => {
+  const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(LS_THEME, next); } catch { /* 忽略 */ }
+});
+
+/* ---------- 事件 ---------- */
+searchInput.addEventListener('input', () => {
+  query = searchInput.value.trim();
+  clearSearchBtn.classList.toggle('show', !!searchInput.value);
+  renderMain();
+});
+clearSearchBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  query = '';
+  clearSearchBtn.classList.remove('show');
+  renderMain();
+  searchInput.focus();
+});
+$('detailClose').addEventListener('click', closeDetail);
+$('detailFav').addEventListener('click', () => { if (selectedA2) toggleFav(selectedA2); });
+
+document.addEventListener('keydown', e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  if (e.key === '/' && !typing) {
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+  } else if (e.key === 'Escape') {
+    if (typing) {
+      searchInput.value = '';
+      query = '';
+      clearSearchBtn.classList.remove('show');
+      renderMain();
+      searchInput.blur();
+    } else if (selectedA2) {
+      closeDetail();
+    }
+  }
+});
+
+/* ---------- 启动 ---------- */
+initTheme();
+renderTabs();
+renderMain();
+</script>
+</body>
+</html>
