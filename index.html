@@ -1070,7 +1070,7 @@ function countryCard(c) {
   card.appendChild(code);
 
   card.addEventListener('click', () => selectCountry(c.a2));
-  card.addEventListener('mouseenter', e => showTooltip(e.currentTarget, `${localName(c)} · ${c.en}`));
+  card.addEventListener('mouseenter', e => showTooltip(e.currentTarget, lang === 'en' ? c.en : `${localName(c)} · ${c.en}`));
   card.addEventListener('mouseleave', hideTooltip);
   return card;
 }
@@ -1697,6 +1697,10 @@ document.addEventListener('keydown', e => {
       closeMap();
     } else if (selectedA2) {
       closeDetail();
+    } else if (activeTab !== '全部') {
+      activeTab = '全部';
+      renderTabs();
+      renderMain();
     }
   }
 });
